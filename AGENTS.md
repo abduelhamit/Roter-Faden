@@ -22,7 +22,7 @@ German word-search puzzle (Strands-style) on a 6 columns × 8 rows grid of 48 le
 - `adapter-static` with `prerender = true` in `src/routes/+layout.ts`. No server code, no `+page.server.ts`, no runtime API.
 - Base path is `/Roter-Faden`. Build internal links with `resolve()` from `$app/paths` and reference assets through imports or `base`. Never hardcode `/`. In Playwright tests, `page.goto` needs the `/Roter-Faden/...` prefix.
 - GitHub Pages runs Jekyll, which ignores `_app/`. Add `static/.nojekyll` before deploying. No deploy workflow exists yet.
-- Shared/editor puzzles live entirely in the URL **hash** (`#...`). The hash only exists in the browser, so prerendering can't see it: decode it client-side (`onMount`/`$effect`/`hashchange`).
+- Shared puzzles live entirely in the URL **hash** (`#...`). The hash only exists in the browser, so prerendering can't see it: decode it client-side (`onMount`/`$effect`/`hashchange`).
 - `src/routes/demo/` and `<DemoLinks />` in `+layout.svelte` are scaffold demos. Delete them (and update the demo e2e test) when building real pages.
 
 ## Game rules agents tend to get wrong
@@ -30,8 +30,12 @@ German word-search puzzle (Strands-style) on a 6 columns × 8 rows grid of 48 le
 - All text is uppercase A–Z only. Umlauts and ß are written out: Ä→AE, Ö→OE, Ü→UE, ß→SS. Grid letters, theme words and dictionary entries all use this form.
 - Every one of the 48 cells belongs to exactly one theme word or to the Roter Faden. No letter is left over and no cell is shared. The editor must check this.
 - Adjacency is 8-directional. A path never reuses a cell.
+- A submission matches a word only if it uses exactly that word's group of cells and spells the word. The path order inside the group is free: the E's and S's of BESSER may be swapped. The editor must reject any word that can also be spelled by a different group of cells.
+- Further editor rules: the puzzle's paths must not cross, neither each other nor themselves (diagonal X inside a 2×2 block). Every theme word must be in the dictionary; the Roter Faden is exempt. Players may cross lines freely, and a found word's bubble follows the player's traced path.
 - Roter Faden (red) must touch two opposite edges: left+right or top+bottom. Theme words are blue. A valid non-theme dictionary word (4+ letters) is gray and feeds the hint meter.
-- Hints: every 3 non-theme words earns 1 hint. At most 100 non-theme words count, so at most 33 hints. A hint draws dashed rings around the cells of one undiscovered theme word. It does not reveal the order.
+- Hints: every 3 non-theme words earns 1 hint. At most 100 non-theme words count, so at most 33 hints. A hint draws dashed rings around the cells of a random undiscovered theme word. It does not reveal the order. The Roter Faden is only hinted once it's the last word left. The hint button is also the meter, filling from left to right.
+- UI is German only and follows GitHub's Primer design system. Color mode: light, dark or system (default system).
+- `/Roter-Faden/` with a hash shows the game. Without one, it goes to the editor at `/Roter-Faden/editor`, which never has a hash. Game progress and work-in-progress puzzles live in `localStorage`. Only work-in-progress puzzles and solved puzzles can be edited, never a puzzle straight from a URL.
 - Found words never lock their cells. The player can still select any cell.
 - Selection rules:
   - Drag: release submits. Moving back over the previous cell undoes the last step.
