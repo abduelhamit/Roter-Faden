@@ -1,3 +1,97 @@
 @import 'tailwindcss';
+@import '@primer/primitives/dist/css/functional/typography/typography.css';
+@import '@primer/primitives/dist/css/functional/spacing/space.css';
+@import '@primer/primitives/dist/css/functional/size/radius.css';
+@import '@primer/primitives/dist/css/functional/size/border.css';
+@import '@primer/primitives/dist/css/functional/size/size.css';
+@import '../lib/styles/primer-tokens.css';
+
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+/* Primer tokens as Tailwind utilities. `inline` so utilities emit var() references
+   and follow the color mode at runtime. No hard-coded colors anywhere else.
+   Add a mapping here the day a component first needs it. */
+@theme inline {
+	/* Text */
+	--color-fg-default: var(--fgColor-default);
+	--color-fg-muted: var(--fgColor-muted);
+	--color-fg-on-emphasis: var(--fgColor-onEmphasis);
+
+	/* Surfaces */
+	--color-canvas: var(--bgColor-default);
+	--color-canvas-muted: var(--bgColor-muted);
+	--color-overlay: var(--overlay-bgColor);
+	--color-overlay-backdrop: var(--overlay-backdrop-bgColor);
+
+	/* Borders */
+	--color-border-default: var(--borderColor-default);
+
+	/* Focus ring */
+	--color-focus-ring: var(--focus-outline-color);
+
+	/* Buttons */
+	--color-btn-bg: var(--button-default-bgColor-rest);
+	--color-btn-bg-hover: var(--button-default-bgColor-hover);
+	--color-btn-bg-active: var(--button-default-bgColor-active);
+	--color-btn-bg-disabled: var(--button-default-bgColor-disabled);
+	--color-btn-fg: var(--button-default-fgColor-rest);
+	--color-btn-fg-disabled: var(--button-default-fgColor-disabled);
+	--color-btn-primary: var(--button-primary-bgColor-rest);
+	--color-btn-primary-hover: var(--button-primary-bgColor-hover);
+	--color-btn-primary-active: var(--button-primary-bgColor-active);
+	--color-btn-primary-disabled: var(--button-primary-bgColor-disabled);
+	--color-btn-primary-fg: var(--button-primary-fgColor-rest);
+	--color-btn-primary-border: var(--button-primary-borderColor-rest);
+	--color-btn-danger: var(--button-danger-bgColor-rest);
+	--color-btn-danger-hover: var(--button-danger-bgColor-hover);
+	--color-btn-danger-active: var(--button-danger-bgColor-active);
+	--color-btn-danger-disabled: var(--button-danger-bgColor-disabled);
+	--color-btn-danger-fg: var(--button-danger-fgColor-rest);
+	--color-btn-danger-border: var(--button-danger-borderColor-rest);
+	--color-btn-outline: var(--button-outline-bgColor-rest);
+	--color-btn-outline-hover: var(--button-outline-bgColor-hover);
+	--color-btn-outline-active: var(--button-outline-bgColor-active);
+	--color-btn-outline-fg: var(--button-outline-fgColor-rest);
+	--color-btn-outline-fg-hover: var(--button-outline-fgColor-hover);
+	--color-btn-outline-border-hover: var(--button-outline-borderColor-hover);
+	--color-btn-outline-border-active: var(--button-outline-borderColor-active);
+
+	/* Controls (segmented switch) */
+	--color-control-bg: var(--control-bgColor-rest);
+
+	/* Game semantics (issue #3): theme word = accent, Roter Faden = danger, non-theme word = muted */
+	--color-theme-word: var(--bgColor-accent-emphasis);
+	--color-faden: var(--bgColor-danger-emphasis);
+	--color-word-hint: var(--fgColor-muted);
+
+	/* Shadows */
+	--shadow-floating: var(--shadow-floating-medium);
+	--shadow-resting: var(--shadow-resting-xsmall);
+
+	/* Spacing: p-xs … p-lg, gap-md … */
+	--spacing-xxs: var(--space-xxs);
+	--spacing-xs: var(--space-xs);
+	--spacing-sm: var(--space-sm);
+	--spacing-md: var(--space-md);
+	--spacing-lg: var(--space-lg);
+
+	/* Radius */
+	--radius-sm: var(--borderRadius-small);
+	--radius-md: var(--borderRadius-medium);
+
+	/* Typography */
+	--font-sans: var(--fontStack-sansSerif);
+}
+
+@layer base {
+	body {
+		@apply bg-canvas font-sans text-fg-default;
+	}
+
+	/* Primer focus ring on every interactive element */
+	:focus-visible {
+		outline: var(--focus-outline-width) solid var(--focus-outline-color);
+		outline-offset: var(--focus-outline-offset);
+	}
+}
