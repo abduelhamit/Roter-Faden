@@ -7,7 +7,8 @@ German word-search puzzle (Strands-style) on a 6 columns × 8 rows grid of 48 le
 - pnpm (`pnpm-lock.yaml`, `engine-strict=true`). Scripts call `npm run` internally; that's fine, but install and run with `pnpm`.
 - `pnpm check` (svelte-check), `pnpm lint` (prettier --check + eslint), `pnpm format`, `pnpm build`.
 - `pnpm test:unit -- --run` runs Vitest once. `pnpm test:e2e` runs Playwright: it builds, then previews on port 4173. E2E files must be named `*.e2e.ts`.
-- `pnpm test` fails while there are no unit test files. Vitest has no "pass with no tests" option set.
+- `pnpm test` fails while there are no unit test files, and `pnpm test:e2e` fails while there are no `*.e2e.ts` files. Neither Vitest nor Playwright has a "pass with no tests" option set.
+- Extend `README.md` as the project develops; it holds the short project description.
 - Vitest uses `environment: 'node'` and `requireAssertions: true`. `vitest-browser-svelte` is installed but not wired up, so component tests need a browser project added to `vite.config.ts` first.
 
 ## SvelteKit 3 quirks (differ from older docs and training data)
@@ -23,7 +24,6 @@ German word-search puzzle (Strands-style) on a 6 columns × 8 rows grid of 48 le
 - Base path is `/Roter-Faden`. Build internal links with `resolve()` from `$app/paths` and reference assets through imports or `base`. Never hardcode `/`. In Playwright tests, `page.goto` needs the `/Roter-Faden/...` prefix.
 - GitHub Pages runs Jekyll, which ignores `_app/`. Add `static/.nojekyll` before deploying. No deploy workflow exists yet.
 - Shared puzzles live entirely in the URL **hash** (`#...`). The hash only exists in the browser, so prerendering can't see it: decode it client-side (`onMount`/`$effect`/`hashchange`).
-- `src/routes/demo/` and `<DemoLinks />` in `+layout.svelte` are scaffold demos. Delete them (and update the demo e2e test) when building real pages.
 
 ## Game rules agents tend to get wrong
 
