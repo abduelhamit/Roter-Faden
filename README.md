@@ -7,9 +7,16 @@ Gebaut mit SvelteKit 3, Svelte 5 (Runes) und Tailwind CSS 4, statisch gebunden m
 ## Entwicklung
 
 ```sh
-pnpm install   # Abhängigkeiten installieren
-pnpm dev       # Entwicklungsserver starten
-pnpm check     # svelte-check
-pnpm lint      # prettier --check + eslint
-pnpm build     # Produktions-Build
+pnpm install             # Abhängigkeiten installieren
+pnpm dev                 # Entwicklungsserver starten
+pnpm check               # svelte-check
+pnpm lint                # prettier --check + eslint
+pnpm format              # Prettier schreibt Dateien um
+pnpm build               # Produktions-Build
+pnpm preview             # Build lokal ausliefern (Port 4173)
+pnpm test:unit -- --run  # Vitest einmalig
+pnpm test:e2e            # baut und startet Preview, dann Playwright
+pnpm test                # beides
 ```
+
+Aktuell gibt es noch keine Testdateien: `pnpm test:unit` und `pnpm test:e2e` scheitern mit „no tests found", bis die ersten Tests existieren.
