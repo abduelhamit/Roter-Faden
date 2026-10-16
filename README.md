@@ -7,16 +7,20 @@ Gebaut mit SvelteKit 3, Svelte 5 (Runes) und Tailwind CSS 4, statisch gebunden m
 ## Entwicklung
 
 ```sh
-pnpm install             # Abhängigkeiten installieren
-pnpm dev                 # Entwicklungsserver starten
-pnpm check               # svelte-check
-pnpm lint                # prettier --check + eslint
-pnpm format              # Prettier schreibt Dateien um
-pnpm build               # Produktions-Build
-pnpm preview             # Build lokal ausliefern (Port 4173)
-pnpm test:unit -- --run  # Vitest einmalig
-pnpm test:e2e            # baut und startet Preview, dann Playwright
-pnpm test                # beides
+pnpm install          # Abhängigkeiten installieren
+pnpm dev              # Entwicklungsserver starten
+pnpm check            # svelte-check
+pnpm lint             # prettier --check + eslint
+pnpm format           # Prettier schreibt Dateien um
+pnpm build            # Produktions-Build
+pnpm preview          # Build lokal ausliefern (Port 4173)
+pnpm test:unit --run  # Vitest einmalig
+pnpm test:e2e         # baut und startet Preview, dann Playwright
+pnpm test             # beides
 ```
 
-Aktuell gibt es noch keine Testdateien: `pnpm test:unit` und `pnpm test:e2e` scheitern mit „no tests found", bis die ersten Tests existieren.
+Aktuell gibt es nur einen Platzhalter-Unit-Test (`src/routes/+layout.test.ts`); `pnpm test:e2e` scheitert noch mit „no tests found", bis die ersten E2E-Tests existieren.
+
+## Deployment
+
+Beim Push auf `main` baut der Workflow `.github/workflows/deploy.yml` die Seite (inklusive `check`, `lint` und Unit-Tests) und veröffentlicht sie mit `actions/deploy-pages` auf GitHub Pages. Pull Requests laufen nur durch Build und Checks. Voraussetzung ist, dass die Pages-Quelle in den Repository-Einstellungen auf „GitHub Actions" steht. `static/.nojekyll` sorgt dafür, dass Pages den `_app/`-Ordner ausliefert. Die Seite läuft unter <https://abduelhamit.github.io/Roter-Faden/>.
