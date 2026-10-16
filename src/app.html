@@ -1,9 +1,19 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" data-color-mode="auto">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+		<script>
+			/* Set the color mode before first paint so no wrong color mode flashes.
+			   Key and values are tied to src/lib/color-mode.ts — parity test: color-mode.test.ts */
+			try {
+				var mode = localStorage.getItem('color-mode');
+				if (mode === 'light' || mode === 'dark') {
+					document.documentElement.setAttribute('data-color-mode', mode);
+				}
+			} catch (e) {}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

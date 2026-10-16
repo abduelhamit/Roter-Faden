@@ -19,7 +19,13 @@ pnpm test:e2e         # baut und startet Preview, dann Playwright
 pnpm test             # beides
 ```
 
-Aktuell gibt es nur einen Platzhalter-Unit-Test (`src/routes/+layout.test.ts`); `pnpm test:e2e` scheitert noch mit „no tests found", bis die ersten E2E-Tests existieren.
+## Design-System
+
+Das UI folgt Primmers Design-System. `src/routes/layout.css` übersetzt Primer-Tokens über `@theme inline` in Tailwind-Klassen (z. B. `text-fg-default`, `bg-canvas`, `border-border-default`) — im Code gibt es keine festen Farben, Abstände oder Schriften. Die Spiel-Farben sind ebenso Tokens: `bg-theme-word` (Akzentblau), `bg-faden` (Danger-Rot), `text-word-hint` (Grau).
+
+Der Farbmodus (Hell/Dunkel/System, Standard: System) wird über `data-color-mode` an `<html>` gesteuert und in `localStorage` gemerkt; ein Inline-Script in `src/app.html` verhindert einen Blitz beim Laden. „System" folgt dem Betriebssystem live, rein über CSS.
+
+Die Farbtokens liegen als gekürzte Fassung in `src/lib/styles/primer-tokens.css`, generiert aus den installierten Primer-Primitives. Nach einem Upgrade von `@primer/primitives` `pnpm generate:tokens` laufen lassen (das Skript steht in `scripts/generate-primer-tokens.mjs`) und anschließend `pnpm test:e2e` prüfen.
 
 ## Deployment
 
