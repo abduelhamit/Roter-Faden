@@ -14,7 +14,7 @@ pnpm lint                # prettier --check + eslint
 pnpm format              # Prettier schreibt Dateien um
 pnpm build               # Produktions-Build
 pnpm preview             # Build lokal ausliefern (Port 4173)
-pnpm test:unit -- --run  # Vitest einmalig
+pnpm test:unit --run     # Vitest einmalig
 pnpm test:e2e            # baut und startet Preview, dann Playwright
 pnpm test                # beides
 ```

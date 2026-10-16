@@ -4,10 +4,10 @@ German word-search puzzle (Strands-style) on a 6 columns × 8 rows grid of 48 le
 
 ## Stack & commands
 
-- pnpm (`pnpm-lock.yaml`, `engine-strict=true`). Scripts call `npm run` internally; that's fine, but install and run with `pnpm`.
+- pnpm (`pnpm-lock.yaml`, `engine-strict=true`). Scripts call `pnpm run` internally; install and run with `pnpm`.
 - `pnpm check` (svelte-check), `pnpm lint` (prettier --check + eslint), `pnpm format`, `pnpm build`.
-- `pnpm test:unit -- --run` runs Vitest once. `pnpm test:e2e` runs Playwright: it builds, then previews on port 4173. E2E files must be named `*.e2e.ts`.
-- `pnpm test` fails while there are no `*.e2e.ts` files; neither Vitest nor Playwright has a "pass with no tests" option set. There is one placeholder unit test, `src/routes/+layout.test.ts`, so `pnpm test:unit -- --run` is green.
+- `pnpm test:unit --run` runs Vitest once. `pnpm test:e2e` runs Playwright: it builds, then previews on port 4173. E2E files must be named `*.e2e.ts`.
+- `pnpm test` fails while there are no `*.e2e.ts` files; neither Vitest nor Playwright has a "pass with no tests" option set. There is one placeholder unit test, `src/routes/+layout.test.ts`, so `pnpm test:unit --run` is green.
 - Extend `README.md` as the project develops; it holds the short project description.
 - Vitest uses `environment: 'node'` and `requireAssertions: true`. `vitest-browser-svelte` is installed but not wired up, so component tests need a browser project added to `vite.config.ts` first.
 
