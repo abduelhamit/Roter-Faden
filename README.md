@@ -1,6 +1,6 @@
 # Roter Faden
 
-Ein deutsches Worträtsel im Strands-Stil: Auf einem Raster aus 6 Spalten und 8 Reihen (48 Buchstaben) gilt es, alle Themawörter entlang ihrer Wörterpfade zu finden. Jeder Buchstabe gehört genau einem Themawort oder dem roten Faden, der das ganze Raster durchzieht. Rätsel lassen sich per URL-Hash teilen.
+Ein deutsches Worträtsel im Strands-Stil: Auf einem Raster aus 6 Spalten und 8 Reihen (48 Buchstaben) gilt es, alle Themawörter entlang ihrer Wörterpfade zu finden. Jeder Buchstabe gehört genau einem Themawort oder dem roten Faden, der das ganze Raster durchzieht. Rätsel lassen sich per URL-Anker teilen.
 
 Gebaut mit SvelteKit 3, Svelte 5 (Runes) und Tailwind CSS 4, statisch gebunden mit `adapter-static` und gehostet unter `/Roter-Faden/`.
 
@@ -26,6 +26,12 @@ Das UI folgt Primers Design-System. `src/routes/layout.css` übersetzt Primer-To
 Der Farbmodus (Hell/Dunkel/System, Standard: System) wird über `data-color-mode` an `<html>` gesteuert und in `localStorage` gemerkt; ein Inline-Script in `src/app.html` verhindert einen Blitz beim Laden. „System" folgt dem Betriebssystem live, rein über CSS.
 
 Die Farbtokens liegen als gekürzte Fassung in `src/lib/styles/primer-tokens.css`, generiert aus den installierten Primer-Primitives. Nach einem Upgrade von `@primer/primitives` `pnpm generate:tokens` laufen lassen (das Skript steht in `scripts/generate-primer-tokens.mjs`) und anschließend `pnpm test:e2e` prüfen.
+
+## Rätsel-Format
+
+Puzzle-Modell, Matching, Validierung und URL-Codec liegen als reines TypeScript in `src/lib/puzzle/` (Tests daneben). Ein geteiltes Rätsel steckt im URL-Anker als `#v1.<base64url>`: Protobuf-Serialisierung → AES-256-GCM (statischer Schlüssel im Bundle — schützt vor neugierigen Spoilern, nicht vor ernsthaften Angreifern) → base64url. Die Wörter werden nicht als Text gespeichert, sondern aus den Buchstaben entlang ihrer Zellpfade rekonstruiert; der Anker verrät damit keine Wörter — die Zellgruppen selbst stecken als Pfade darin. Die Validierung prüft alle Spielregeln und meldet Verstöße auf Deutsch; das Wörterbuch wird als `isWord`-Funktion injiziert (siehe Issue #5). Validiert wird nur im Editor — das Spiel wertet dekodierte URLs nicht damit aus, weil die Eindeutigkeitssuche (Regel 8) exponentiell ist. Deshalb garantiert `decodePuzzle` auch nur die Struktur (48 Buchstaben, ganze Zellindizes) — Regelverstöße aus handgebauten URLs laufen bewusst durch.
+
+Das Protobuf-Schema liegt in `src/lib/puzzle/puzzle.proto`. Nach einer Änderung `pnpm generate:proto` laufen lassen — das erzeugt `puzzle.pb.js` und `puzzle.pb.d.ts`, die mit eingecheckt werden (wie die Primer-Tokens oben).
 
 ## Deployment
 

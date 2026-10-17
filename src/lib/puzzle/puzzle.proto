@@ -1,0 +1,13 @@
+edition = "2024";
+package roterfaden;
+
+message Word {
+  repeated uint32 path = 1 [packed = true];
+}
+
+message Puzzle {
+  string clue = 1;
+  string letters = 2;
+  repeated Word words = 3;
+  repeated uint32 faden = 4 [packed = true];
+}
