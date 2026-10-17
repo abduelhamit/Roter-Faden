@@ -27,6 +27,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # svelte-check only sees the stale .d.ts, so nothing else catches drift from puzzle.proto.
+      - run: pnpm generate:proto && git diff --exit-code src/lib/puzzle/
       - run: pnpm check
       - run: pnpm lint
       - run: pnpm test:unit --run

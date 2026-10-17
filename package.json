@@ -9,6 +9,7 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"generate:tokens": "node scripts/generate-primer-tokens.mjs",
+		"generate:proto": "pbjs --target static-module --wrap es6 -o src/lib/puzzle/puzzle.pb.js src/lib/puzzle/puzzle.proto && pbts --es6 -o src/lib/puzzle/puzzle.pb.d.ts src/lib/puzzle/puzzle.pb.js",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:e2e": "playwright install --with-deps chromium && playwright test",
@@ -38,6 +39,7 @@
 		"prettier": "^3.9.10",
 		"prettier-plugin-svelte": "^4.1.1",
 		"prettier-plugin-tailwindcss": "^0.8.1",
+		"protobufjs-cli": "^2.7.1",
 		"svelte": "^5.57.2",
 		"svelte-check": "^4.7.6",
 		"tailwindcss": "^4.3.3",
@@ -50,5 +52,8 @@
 	"imports": {
 		"#lib": "./src/lib/index.js",
 		"#lib/*": "./src/lib/*"
+	},
+	"dependencies": {
+		"protobufjs": "^8.8.1"
 	}
 }

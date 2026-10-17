@@ -10,6 +10,10 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	{
+		// Generated protobuf module (pnpm generate:proto)
+		ignores: ['src/lib/puzzle/puzzle.pb.js', 'src/lib/puzzle/puzzle.pb.d.ts']
+	},
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,
