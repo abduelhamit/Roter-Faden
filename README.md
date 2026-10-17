@@ -21,7 +21,7 @@ pnpm test             # beides
 
 ## Design-System
 
-Das UI folgt Primmers Design-System. `src/routes/layout.css` übersetzt Primer-Tokens über `@theme inline` in Tailwind-Klassen (z. B. `text-fg-default`, `bg-canvas`, `border-border-default`) — im Code gibt es keine festen Farben, Abstände oder Schriften. Die Spiel-Farben sind ebenso Tokens: `bg-theme-word` (Akzentblau), `bg-faden` (Danger-Rot), `text-word-hint` (Grau).
+Das UI folgt Primers Design-System. `src/routes/layout.css` übersetzt Primer-Tokens über `@theme inline` in Tailwind-Klassen (z. B. `text-fg-default`, `bg-canvas`, `border-border-default`) — im Code gibt es keine festen Farben, Abstände oder Schriften. Die Spiel-Farben sind ebenso Tokens: `bg-theme-word` (Akzentblau), `bg-faden` (Danger-Rot), `text-word-hint` (Grau).
 
 Der Farbmodus (Hell/Dunkel/System, Standard: System) wird über `data-color-mode` an `<html>` gesteuert und in `localStorage` gemerkt; ein Inline-Script in `src/app.html` verhindert einen Blitz beim Laden. „System" folgt dem Betriebssystem live, rein über CSS.
 
