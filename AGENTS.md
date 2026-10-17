@@ -7,7 +7,7 @@ German word-search puzzle (Strands-style) on a 6 columns × 8 rows grid of 48 le
 - pnpm (`pnpm-lock.yaml`, `engine-strict=true`). Scripts call `pnpm run` internally; install and run with `pnpm`.
 - `pnpm check` (svelte-check), `pnpm lint` (prettier --check + eslint), `pnpm format`, `pnpm build`.
 - `pnpm test:unit --run` runs Vitest once. `pnpm test:e2e` runs Playwright: it builds, then previews on port 4173. E2E files must be named `*.e2e.ts`. CI (`deploy.yml`) runs `pnpm test:e2e` on every PR and push; failures show in the step logs — if they get mysterious, add a `playwright-report/` artifact upload.
-- Code text — comments, test names, variables, identifiers — is English. Only the visible page UI and `README.md` are German.
+- Code text is English, e.g. comments, test names, variables, identifiers, commit messages (non-exhaustive: anything that is not visible page UI). Only the visible page UI and `README.md` are German.
 - Extend `README.md` as the project develops; it holds the short project description.
 - Vitest uses `environment: 'node'` and `requireAssertions: true`. `vitest-browser-svelte` is installed but not wired up, so component tests need a browser project added to `vite.config.ts` first.
 
