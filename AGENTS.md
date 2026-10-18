@@ -1,6 +1,6 @@
 # Roter Faden
 
-German word-search puzzle (Strands-style) on a 6 columns × 8 rows grid of 48 letters. Currently a fresh `sv` scaffold: the game is not built yet.
+German word-search puzzle on a 6 columns × 8 rows grid of 48 letters.
 
 ## Stack & commands
 
