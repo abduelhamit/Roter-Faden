@@ -3,7 +3,7 @@ import type { Puzzle } from './model.js';
 /** The six theme words of `validPuzzle`, derived from letters along the row paths. */
 export const THEME_WORDS = ['BESSER', 'DIENST', 'ZUCKER', 'MONTAG', 'WEINEN', 'SCHLAF'] as const;
 
-/** Dictionary stub until the real one arrives with issue #5. */
+/** Synchronous stub for validatePuzzle tests; the real dictionary (./dictionary.js) loads async. */
 export const testIsWord = (word: string): boolean =>
 	(THEME_WORDS as readonly string[]).includes(word);
 

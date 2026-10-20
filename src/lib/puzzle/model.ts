@@ -18,18 +18,46 @@ export interface Puzzle {
 	faden: number[];
 }
 
+/** Everything outside A–Z, gone. */
+export const stripNonAtoZ = (raw: string): string => raw.replace(/[^A-Z]/g, '');
+
+/** Uppercase, Ä→AE, Ö→OE, Ü→UE, ß→SS, then drop everything outside A–Z. */
+export const normalizeText = (raw: string): string => stripNonAtoZ(foldLetters(raw));
+
 /**
- * Uppercase, Ä→AE, Ö→OE, Ü→UE, ß→SS (via uppercase), then keep only A–Z.
- * ẞ survives uppercasing, so it is written out explicitly.
+ * Nothing is ever dropped: characters without a mapping stay as they are after
+ * uppercasing, so the caller can see the damage and warn about it.
  */
-export function normalizeText(raw: string): string {
+export function foldLetters(raw: string): string {
 	return raw
 		.toUpperCase()
+		.replace(/Á/g, 'A')
+		.replace(/À/g, 'A')
+		.replace(/Â/g, 'A')
+		.replace(/Å/g, 'A')
+		.replace(/Ã/g, 'A')
 		.replace(/Ä/g, 'AE')
+		.replace(/Æ/g, 'AE')
+		.replace(/Ç/g, 'C')
+		.replace(/É/g, 'E')
+		.replace(/È/g, 'E')
+		.replace(/Ê/g, 'E')
+		.replace(/Ë/g, 'E')
+		.replace(/Í/g, 'I')
+		.replace(/Ì/g, 'I')
+		.replace(/Î/g, 'I')
+		.replace(/Ï/g, 'I')
+		.replace(/Ñ/g, 'N')
+		.replace(/Ó/g, 'O')
+		.replace(/Ò/g, 'O')
+		.replace(/Ô/g, 'O')
 		.replace(/Ö/g, 'OE')
-		.replace(/Ü/g, 'UE')
+		.replace(/Ø/g, 'OE')
 		.replace(/ẞ/g, 'SS')
-		.replace(/[^A-Z]/g, '');
+		.replace(/Ú/g, 'U')
+		.replace(/Û/g, 'U')
+		.replace(/Ü/g, 'UE')
+		.replace(/Ÿ/g, 'Y');
 }
 
 /** 8-directional neighbour test (row/col deltas), so 5→6 is NOT adjacent. */

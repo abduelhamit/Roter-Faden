@@ -33,6 +33,12 @@ Puzzle-Modell, Matching, Validierung und URL-Codec liegen als reines TypeScript 
 
 Das Protobuf-Schema liegt in `src/lib/puzzle/puzzle.proto`. Nach einer Änderung `pnpm generate:proto` laufen lassen — das erzeugt `puzzle.pb.js` und `puzzle.pb.d.ts`, die mit eingecheckt werden (wie die Primer-Tokens oben).
 
+## Wörterbuch
+
+Die Wortliste liegt als `static/dictionary.txt.gz` im Repo und ist mit **Git LFS** verwaltet — nach dem Klonen `git lfs install && git lfs pull` ausführen, sonst steht dort nur ein LFS-Pointer. Enthalten sind ausschließlich A–Z-Wörter mit mindestens 4 Buchstaben, normalisiert wie im Rätsel-Code (Großbuchstaben, Ä→AE, Ö→OE, Ü→UE, ß→SS usw.), sortiert und dedupliziert. Einträge, die nach der Normalisierung immer noch Buchstaben außerhalb von A–Z enthalten, werden beim Erzeugen mit Warnung übersprungen statt stillschweigend verstümmelt.
+
+Quelle ist die Free German Dictionary (<https://sourceforge.net/projects/germandict/>), vom Projekt als Public Domain gekennzeichnet; sie wurde überwiegend aus dem deutschen Wikipedia-Dump (CC BY-SA) erzeugt. `pnpm generate:dictionary` lädt die Quelle (sha256-geprüft, danach aus `.cache/`) und erzeugt die Datei neu; `pnpm build` sichert mit `--ensure`, dass die Datei vollständig im Repo liegt. Im Browser lädt `loadDictionary()` aus `src/lib/puzzle/dictionary.ts` die Liste erst, nachdem die Oberfläche gerendert ist — bis dahin wirft `isWord()` einen Fehler. Mit `loadDictionary(url, letters)` filtert das Spiel die Liste beim Laden zusätzlich auf die Wörter, die ein Spieler auf dem Brett tatsächlich zeichnen kann (benachbarte Zellen, keine Wiederholung), behält sie als `Set` und gibt den vollen Text wieder frei; geänderte Buchstaben führen zu einem erneuten Laden.
+
 ## Deployment
 
 Beim Push auf `main` baut der Workflow `.github/workflows/deploy.yml` die Seite (inklusive `check`, `lint` und Unit-Tests) und veröffentlicht sie mit `actions/deploy-pages` auf GitHub Pages. Pull Requests laufen nur durch Build und Checks. Voraussetzung ist, dass die Pages-Quelle in den Repository-Einstellungen auf „GitHub Actions" steht. `static/.nojekyll` sorgt dafür, dass Pages den `_app/`-Ordner ausliefert. Die Seite läuft unter <https://abduelhamit.github.io/Roter-Faden/>.

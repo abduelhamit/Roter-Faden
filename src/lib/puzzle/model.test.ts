@@ -1,19 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import { validPuzzle } from './fixtures.js';
-import { cellsEqual, isAdjacent, isPuzzleShape, normalizeText, spellPath } from './model.js';
+import {
+	cellsEqual,
+	foldLetters,
+	isAdjacent,
+	isPuzzleShape,
+	normalizeText,
+	spellPath
+} from './model.js';
 
 describe('normalizeText', () => {
-	it('uppercases and expands umlauts', () => {
+	it('folds and keeps only A–Z', () => {
 		expect(normalizeText('grüße')).toBe('GRUESSE');
-		expect(normalizeText('Ärmel, Öl, Übermut')).toBe('AERMELOELUEBERMUT');
-		// capital ẞ survives uppercasing, so normalizeText has to write it out itself
-		expect(normalizeText('STRAẞE')).toBe('STRASSE');
-	});
-
-	it('keeps only A–Z', () => {
 		expect(normalizeText('straße!')).toBe('STRASSE');
 		expect(normalizeText('Haus 4')).toBe('HAUS');
+		expect(normalizeText('Œuvre')).toBe('UVRE');
 		expect(normalizeText('')).toBe('');
+	});
+});
+
+describe('foldLetters', () => {
+	it('uppercases and expands umlauts', () => {
+		expect(foldLetters('grüße')).toBe('GRUESSE');
+		// capital ẞ survives uppercasing, so foldLetters has to write it out itself
+		expect(foldLetters('STRAẞE')).toBe('STRASSE');
+	});
+
+	// Deleting anything would hide it from the caller — the dictionary generator
+	// needs to see the damage to warn about it.
+	it('leaves everything without a mapping untouched', () => {
+		expect(foldLetters('straße!')).toBe('STRASSE!');
+		expect(foldLetters('Haus 4')).toBe('HAUS 4');
+		expect(foldLetters('')).toBe('');
 	});
 });
 

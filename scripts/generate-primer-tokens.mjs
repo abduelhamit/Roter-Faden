@@ -9,8 +9,11 @@
 // Run after `pnpm up @primer/primitives`:  pnpm generate:tokens && pnpm test:e2e
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
+// fileURLToPath, not URL#pathname: pathname stays percent-encoded, which would break any
+// checkout whose path contains spaces or non-ASCII characters (see generate-dictionary.mjs).
+const root = fileURLToPath(new URL('..', import.meta.url));
 const primitivesPkg = JSON.parse(
 	readFileSync(`${root}node_modules/@primer/primitives/package.json`, 'utf8')
 );
