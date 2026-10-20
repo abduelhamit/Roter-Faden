@@ -3,13 +3,17 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"engines": {
+		"node": ">=22.18"
+	},
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "node scripts/generate-dictionary.mjs --ensure && vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"generate:tokens": "node scripts/generate-primer-tokens.mjs",
 		"generate:proto": "pbjs --target static-module --wrap es6 -o src/lib/puzzle/puzzle.pb.js src/lib/puzzle/puzzle.proto && pbts --es6 -o src/lib/puzzle/puzzle.pb.d.ts src/lib/puzzle/puzzle.pb.js",
+		"generate:dictionary": "node scripts/generate-dictionary.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:e2e": "playwright install --with-deps chromium && playwright test",

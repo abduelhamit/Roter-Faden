@@ -41,4 +41,4 @@ German word-search puzzle on a 6 columns × 8 rows grid of 48 letters.
   - Drag: release submits. Moving back over the previous cell undoes the last step.
   - Tap: tapping the last cell again submits. Tapping an earlier selected cell cuts the selection back to that cell. Tapping a non-adjacent cell or outside the board clears it.
 - No strikes, timers or penalties. The share text uses 🔵 for a theme word, 🔴 for the Roter Faden and 💡 for a hint used, in the order they happened.
-- The German dictionary has to ship as a static asset or be bundled at build time. No word list exists in the repo yet.
+- The German dictionary ships as `static/dictionary.txt.gz` (Git LFS; regenerate with `pnpm generate:dictionary`) and loads lazily in the browser via `loadDictionary()` after the board has rendered.
