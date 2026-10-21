@@ -36,7 +36,7 @@
 	onclose={close}
 	onclick={ondialogclick}
 	aria-labelledby="dialog-title"
-	class="w-(--overlay-width-medium) max-w-[calc(100vw-2*var(--space-lg))] rounded-md border border-border-default bg-overlay p-0 text-fg-default shadow-floating [&::backdrop]:bg-overlay-backdrop"
+	class="w-(--overlay-width-medium) max-w-[calc(100vw-2*var(--space-lg))] rounded-md border border-border-default bg-overlay p-0 text-fg-default shadow-floating backdrop:bg-overlay-backdrop"
 >
 	<div class="flex items-center justify-between border-b border-border-default px-lg py-md">
 		<h2 id="dialog-title" class="text-base font-semibold">{@render title()}</h2>
