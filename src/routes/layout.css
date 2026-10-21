@@ -65,6 +65,9 @@
 	--color-faden: var(--bgColor-danger-emphasis);
 	--color-word-hint: var(--fgColor-muted);
 
+	/* Strokes under the letters */
+	--color-game-line: var(--display-gray-scale-4);
+
 	/* Shadows */
 	--shadow-floating: var(--shadow-floating-medium);
 	--shadow-resting: var(--shadow-resting-xsmall);
