@@ -33,8 +33,15 @@ test('selects letters by dragging and by tapping', async ({ page }) => {
 	const cell7 = await center(7);
 	await page.mouse.click(cell7.x, cell7.y);
 	await expect(letters).toHaveText('DI');
+	// Two cells: a real line, plus one dot per cell.
+	await expect(page.locator('svg polyline')).toHaveCount(1);
+	await expect(page.locator('svg circle')).toHaveCount(2);
 	await page.mouse.click(cell6.x, cell6.y);
 	await expect(letters).toHaveText('D');
+	// One cell: only a dot. A zero-length polyline would be drawn as an oversized
+	// stroke on iOS Safari (see GameBoard.svelte).
+	await expect(page.locator('svg polyline')).toHaveCount(0);
+	await expect(page.locator('svg circle')).toHaveCount(1);
 
 	// Tapping outside the board clears the selection.
 	await page.getByText('Zeit, die alles heilt').click();

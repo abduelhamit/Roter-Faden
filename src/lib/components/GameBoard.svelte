@@ -32,12 +32,7 @@
 		'word-hint': { circle: 'fill-none stroke-word-hint stroke-[0.025]', polyline: '' }
 	};
 
-	// Every point twice, so a single selected cell still renders as a round dot.
-	const points = (cells: number[]): string =>
-		cells
-			.flatMap((c) => [c, c])
-			.map((c) => `${posx(c)},${posy(c)}`)
-			.join(' ');
+	const points = (cells: number[]): string => cells.map((c) => `${posx(c)},${posy(c)}`).join(' ');
 
 	const posx = (cell: number): number => (cell % COLS) + 0.5;
 	const posy = (cell: number): number => Math.floor(cell / COLS) + 0.5;
@@ -116,28 +111,34 @@
 			{#each line.cells as cell (cell)}
 				<circle class={lineStrokes[line.variant].circle} r="5%" cx={posx(cell)} cy={posy(cell)} />
 			{/each}
+			<!-- A zero-length segment (one cell) is drawn by the circles above; iOS Safari
+			     renders it as an oversized stroke instead. -->
+			{#if line.cells.length > 1}
+				<polyline
+					fill="none"
+					stroke-width="12"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					vector-effect="non-scaling-stroke"
+					class={lineStrokes[line.variant].polyline}
+					points={points(line.cells)}
+				/>
+			{/if}
+		{/each}
+		{#each sel.path as cell (cell)}
+			<circle class="fill-game-line" r="5%" cx={posx(cell)} cy={posy(cell)} />
+		{/each}
+		{#if sel.path.length > 1}
 			<polyline
 				fill="none"
 				stroke-width="12"
 				stroke-linecap="round"
 				stroke-linejoin="round"
 				vector-effect="non-scaling-stroke"
-				class={lineStrokes[line.variant].polyline}
-				points={points(line.cells)}
+				class="stroke-game-line"
+				points={points(sel.path)}
 			/>
-		{/each}
-		{#each sel.path as cell (cell)}
-			<circle class="fill-game-line" r="5%" cx={posx(cell)} cy={posy(cell)} />
-		{/each}
-		<polyline
-			fill="none"
-			stroke-width="12"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			vector-effect="non-scaling-stroke"
-			class="stroke-game-line"
-			points={points(sel.path)}
-		/>
+		{/if}
 	</svg>
 	<div
 		class="relative grid h-full w-full grid-cols-6 grid-rows-8 border-t border-l border-border-default"
