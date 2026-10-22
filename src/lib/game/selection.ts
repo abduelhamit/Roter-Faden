@@ -63,8 +63,7 @@ export function reduce(state: SelectionState, event: SelectionEvent): SelectionR
 			if (!gesture || event.cell === null) return { state, submit: null };
 			const i = path.indexOf(event.cell);
 			let next: number[];
-			if (path.length === 0) next = [event.cell];
-			else if (i === path.length - 1) return { state, submit: null };
+			if (i === path.length - 1) return { state, submit: null };
 			else if (i >= 0) next = path.slice(0, i + 1);
 			else if (isAdjacent(path[path.length - 1], event.cell)) next = [...path, event.cell];
 			else return { state, submit: null };
