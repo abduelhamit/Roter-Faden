@@ -82,7 +82,14 @@ describe('move', () => {
 		let state = press(emptySelection(), 0);
 		state = move(state, 1);
 		const again = move(state, 1);
-		expect(again).toEqual(state);
+		expect(again).toBe(state);
+	});
+
+	it('does not mark a tap-extension as a drag when the pointer re-hits the last cell', () => {
+		let state = reduce(press(emptySelection(), 0), { type: 'release' }).state;
+		state = press(state, 1);
+		state = move(state, 1);
+		expect(reduce(state, { type: 'release' }).submit).toBeNull();
 	});
 
 	it('performs elastic undo onto the previous cell', () => {

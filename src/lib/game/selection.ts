@@ -27,6 +27,21 @@ export interface SelectionResult {
 export const emptySelection = (): SelectionState => ({ path: [], gesture: null });
 
 /**
+ * Advance the path toward `cell`, or null if that's not possible.
+ * Re-hitting the last cell is a no-op (same reference), hitting an earlier one cuts
+ * the path back to it, and an adjacent new cell appends; anything else is rejected.
+ * The empty-path guard must come first: unchecked, both indices are -1 and match the end.
+ */
+function step(path: number[], cell: number): number[] | null {
+	if (path.length === 0) return null;
+	const i = path.indexOf(cell);
+	if (i === path.length - 1) return path;
+	if (i >= 0) return path.slice(0, i + 1);
+	if (isAdjacent(path[path.length - 1], cell)) return [...path, cell];
+	return null;
+}
+
+/**
  * One event, one pure step. The rules:
  * - press: extend if adjacent; cut back to an earlier cell if hit; start fresh otherwise;
  *   `null` clears. A press while a gesture is active is ignored (second finger).
@@ -47,13 +62,7 @@ export function reduce(state: SelectionState, event: SelectionEvent): SelectionR
 		case 'press': {
 			if (gesture) return { state, submit: null };
 			if (event.cell === null) return { state: emptySelection(), submit: null };
-			const i = path.indexOf(event.cell);
-			let next: number[];
-			if (path.length === 0) next = [event.cell];
-			else if (i === path.length - 1) next = path;
-			else if (i >= 0) next = path.slice(0, i + 1);
-			else if (isAdjacent(path[path.length - 1], event.cell)) next = [...path, event.cell];
-			else next = [event.cell];
+			const next = step(path, event.cell) ?? [event.cell];
 			return {
 				state: { path: next, gesture: { pressPath: path, movedByDrag: false } },
 				submit: null
@@ -61,12 +70,9 @@ export function reduce(state: SelectionState, event: SelectionEvent): SelectionR
 		}
 		case 'move': {
 			if (!gesture || event.cell === null) return { state, submit: null };
-			const i = path.indexOf(event.cell);
-			let next: number[];
-			if (i === path.length - 1) return { state, submit: null };
-			else if (i >= 0) next = path.slice(0, i + 1);
-			else if (isAdjacent(path[path.length - 1], event.cell)) next = [...path, event.cell];
-			else return { state, submit: null };
+			const next = step(path, event.cell);
+			// `next === path` means the last cell was hit again — a no-op, not a change.
+			if (next === null || next === path) return { state, submit: null };
 			return {
 				state: { path: next, gesture: { ...gesture, movedByDrag: true } },
 				submit: null
