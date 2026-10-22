@@ -99,8 +99,7 @@
 </p>
 <div
 	bind:this={root}
-	role="application"
-	aria-label="Spielfeld"
+	role="presentation"
 	class="relative aspect-3/4 w-full touch-none overflow-hidden rounded-md select-none"
 	{onpointerdown}
 	{onpointermove}
