@@ -16,6 +16,13 @@ export default defineConfig({
 			paths: { base: '/Roter-Faden' }
 		})
 	],
+	preview: {
+		// ngrok free hostnames change per tunnel; the leading dot allows all subdomains.
+		allowedHosts: ['.ngrok-free.dev']
+	},
+	server: {
+		allowedHosts: ['.ngrok-free.dev']
+	},
 	test: {
 		expect: { requireAssertions: true },
 		environment: 'node',

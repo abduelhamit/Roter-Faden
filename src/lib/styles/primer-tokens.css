@@ -48,6 +48,7 @@
 	--control-bgColor-rest: #f6f8fa;
 	--bgColor-accent-emphasis: #0969da;
 	--bgColor-danger-emphasis: #cf222e;
+	--display-gray-scale-4: #808fa3;
 	--shadow-floating-medium:
 		0 0 0 1px #d1d9e000, 0 8px 16px -4px #25292e14, 0 4px 32px -4px #25292e14,
 		0 24px 48px -12px #25292e14, 0 48px 96px -24px #25292e14;
@@ -107,6 +108,7 @@
 	--control-bgColor-rest: #212830;
 	--bgColor-accent-emphasis: #1f6feb;
 	--bgColor-danger-emphasis: #da3633;
+	--display-gray-scale-4: #576270;
 	--shadow-floating-medium:
 		0 0 0 1px #3d444d, 0 8px 16px -4px #01040966, 0 4px 32px -4px #01040966,
 		0 24px 48px -12px #01040966, 0 48px 96px -24px #01040966;
@@ -166,6 +168,7 @@
 		--control-bgColor-rest: #212830;
 		--bgColor-accent-emphasis: #1f6feb;
 		--bgColor-danger-emphasis: #da3633;
+		--display-gray-scale-4: #576270;
 		--shadow-floating-medium:
 			0 0 0 1px #3d444d, 0 8px 16px -4px #01040966, 0 4px 32px -4px #01040966,
 			0 24px 48px -12px #01040966, 0 48px 96px -24px #01040966;
