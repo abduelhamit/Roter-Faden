@@ -27,6 +27,10 @@ Der Farbmodus (Hell/Dunkel/System, Standard: System) wird über `data-color-mode
 
 Die Farbtokens liegen als gekürzte Fassung in `src/lib/styles/primer-tokens.css`, generiert aus den installierten Primer-Primitives. Nach einem Upgrade von `@primer/primitives` `pnpm generate:tokens` laufen lassen (das Skript steht in `scripts/generate-primer-tokens.mjs`) und anschließend `pnpm test:e2e` prüfen.
 
+## Rechtliches
+
+Impressum und Datenschutzerklärung liegen als eigene Routen unter `/impressum` und `/datenschutz` und sind über den Footer (in `src/routes/+layout.svelte`) auf jeder Seite erreichbar. Die Anbieterdaten stehen einmalig in `src/lib/provider.ts` und werden von beiden Seiten verwendet; der Datenschutz-Text beschreibt genau das, was die Seite wirklich tut (localStorage, gehostetes Wörterbuch, GitHub Pages) und muss mit jeder neuen externen Abhängigkeit angepasst werden.
+
 ## Rätsel-Format
 
 Puzzle-Modell, Matching, Validierung und URL-Codec liegen als reines TypeScript in `src/lib/puzzle/` (Tests daneben). Ein geteiltes Rätsel steckt im URL-Anker als `#v1.<base64url>`: Protobuf-Serialisierung → AES-256-GCM (statischer Schlüssel im Bundle — schützt vor neugierigen Spoilern, nicht vor ernsthaften Angreifern) → base64url. Die Wörter werden nicht als Text gespeichert, sondern aus den Buchstaben entlang ihrer Zellpfade rekonstruiert; der Anker verrät damit keine Wörter — die Zellgruppen selbst stecken als Pfade darin. Die Validierung prüft alle Spielregeln und meldet Verstöße auf Deutsch; das Wörterbuch wird als `isWord`-Funktion injiziert (siehe Issue #5). Validiert wird nur im Editor — das Spiel wertet dekodierte URLs nicht damit aus, weil die Eindeutigkeitssuche (Regel 8) exponentiell ist. Deshalb garantiert `decodePuzzle` auch nur die Struktur (48 Buchstaben, ganze Zellindizes) — Regelverstöße aus handgebauten URLs laufen bewusst durch.

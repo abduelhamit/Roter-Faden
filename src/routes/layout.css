@@ -15,6 +15,7 @@
 @theme inline {
 	/* Text */
 	--color-fg-default: var(--fgColor-default);
+	--color-fg-accent: var(--fgColor-accent);
 	--color-fg-muted: var(--fgColor-muted);
 	--color-fg-on-emphasis: var(--fgColor-onEmphasis);
 

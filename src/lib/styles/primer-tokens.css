@@ -12,6 +12,7 @@
 [data-color-mode='light'],
 [data-color-mode='auto'] {
 	--fgColor-default: #1f2328;
+	--fgColor-accent: #0969da;
 	--fgColor-muted: #59636e;
 	--fgColor-onEmphasis: #ffffff;
 	--bgColor-default: #ffffff;
@@ -64,7 +65,6 @@
 	--borderColor-translucent: #1f232826;
 	--fgColor-danger: #d1242f;
 	--control-borderColor-rest: var(--borderColor-default);
-	--fgColor-accent: #0969da;
 	--button-primary-borderColor-hover: var(--button-primary-borderColor-rest);
 	--bgColor-disabled: #eff2f5;
 	--fgColor-disabled: #818b98;
@@ -72,6 +72,7 @@
 
 [data-color-mode='dark'] {
 	--fgColor-default: #f0f6fc;
+	--fgColor-accent: #4493f8;
 	--fgColor-muted: #9198a1;
 	--fgColor-onEmphasis: #ffffff;
 	--bgColor-default: #0d1117;
@@ -132,6 +133,7 @@
 @media (prefers-color-scheme: dark) {
 	[data-color-mode='auto'] {
 		--fgColor-default: #f0f6fc;
+		--fgColor-accent: #4493f8;
 		--fgColor-muted: #9198a1;
 		--fgColor-onEmphasis: #ffffff;
 		--bgColor-default: #0d1117;
