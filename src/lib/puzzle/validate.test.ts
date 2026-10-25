@@ -171,7 +171,7 @@ describe('validatePuzzle', () => {
 				rule: 'faden-edges',
 				message:
 					'Der Roter Faden muss gegenüberliegende Ränder berühren (links+rechts oder oben+unten).',
-				cells: [],
+				cells: [14, 15, 16, 17],
 				subject: fadenRow
 			});
 		});
@@ -189,12 +189,22 @@ describe('validatePuzzle', () => {
 		it('rejects a word shorter than 4 letters', () => {
 			const puzzle = validPuzzle();
 			puzzle.words[0] = [0, 1, 2];
-			expectViolation(violationsOf(puzzle), {
-				rule: 'word-length',
-				message: 'Themenwort 1 hat weniger als 4 Buchstaben.',
-				cells: [0, 1, 2],
-				subject: wordRow(0)
-			});
+			const asked: string[] = [];
+			expectViolation(
+				violationsOf(puzzle, (word) => {
+					asked.push(word);
+					return true; // even a lenient dictionary must not make the short word a word
+				}),
+				{
+					rule: 'word-length',
+					message: 'Themenwort 1 hat weniger als 4 Buchstaben.',
+					cells: [0, 1, 2],
+					subject: wordRow(0)
+				}
+			);
+			// rule 7 stays silent: a word rule 5 already rejected never reaches the dictionary
+			expect(asked).not.toContain('BES');
+			expect(asked).toHaveLength(THEME_WORDS.length - 1);
 		});
 	});
 
@@ -229,8 +239,8 @@ describe('validatePuzzle', () => {
 				return true;
 			});
 			expect(result.ok).toBe(true);
-			// dictionary and uniqueness each ask once per word; a Set lookup makes that cheap
-			expect(new Set(asked)).toEqual(new Set(THEME_WORDS));
+			// the dictionary is asked exactly once per word, in word order
+			expect(asked).toEqual([...THEME_WORDS]);
 		});
 	});
 

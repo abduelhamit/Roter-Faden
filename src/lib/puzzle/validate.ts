@@ -61,6 +61,23 @@ const paths = (puzzle: Puzzle): Array<[number[], ViolationSubject]> => [
 	...puzzle.words.map((path, index): [number[], ViolationSubject] => [path, wordRow(index)])
 ];
 
+/** A theme word as spelled by its path, with the dictionary asked once for rules 7 and 8. */
+export interface SpelledWord {
+	index: number;
+	path: number[];
+	word: string;
+	/** 4+ letters and in the dictionary; shorter words never reach the dictionary. */
+	known: boolean;
+}
+
+/** Spells every theme word and asks the dictionary once per word. */
+export function spellWords(puzzle: Puzzle, isWord: (word: string) => boolean): SpelledWord[] {
+	return puzzle.words.map((path, index) => {
+		const word = spellPath(puzzle.letters, path);
+		return { index, path, word, known: word.length >= 4 && isWord(word) };
+	});
+}
+
 /**
  * Checks every puzzle rule and returns all violations, in a stable order
  * (structure, adjacency, crossings, coverage, faden, words, uniqueness).
@@ -78,6 +95,8 @@ export function validatePuzzle(
 	const structure = checkStructure(puzzle);
 	if (structure.length > 0) return { ok: false, violations: structure };
 
+	// Rules 7 and 8 both need the dictionary, so it is asked once per word here.
+	const spelled = spellWords(puzzle, isWord);
 	const violations = [
 		...checkAdjacency(puzzle),
 		...checkCrossings(puzzle),
@@ -85,8 +104,8 @@ export function validatePuzzle(
 		...checkFadenEdges(puzzle),
 		...checkWordCount(puzzle),
 		...checkWordLength(puzzle),
-		...checkDictionary(puzzle, isWord),
-		...checkUniqueness(puzzle, isWord)
+		...checkDictionary(spelled),
+		...checkUniqueness(puzzle, spelled)
 	];
 	return violations.length > 0 ? { ok: false, violations } : { ok: true };
 }
@@ -209,7 +228,8 @@ export function checkFadenEdges({ faden }: Puzzle): Violation[] {
 		violation(
 			'faden-edges',
 			'Der Roter Faden muss gegenüberliegende Ränder berühren (links+rechts oder oben+unten).',
-			FADEN_ROW
+			FADEN_ROW,
+			faden
 		)
 	];
 }
@@ -242,28 +262,26 @@ export function checkWordLength(puzzle: Puzzle): Violation[] {
 }
 
 /** Rule 7: every theme word is in the dictionary; the Roter Faden is exempt. */
-export function checkDictionary(puzzle: Puzzle, isWord: (word: string) => boolean): Violation[] {
+export function checkDictionary(words: SpelledWord[]): Violation[] {
 	const out: Violation[] = [];
-	puzzle.words.forEach((path, index) => {
-		const word = spellPath(puzzle.letters, path);
-		if (word.length < 4 || isWord(word)) return;
+	for (const { index, path, word, known } of words) {
+		if (word.length < 4 || known) continue;
 		out.push(
 			violation('dictionary', `„${word}“ kommt nicht im Wörterbuch vor.`, wordRow(index), path)
 		);
-	});
+	}
 	return out;
 }
 
 /**
  * Rule 8: no other cell group may spell a word. Repeated letters (the BESSER case)
- * only produce other orderings of the same group, which is fine. The dictionary gate
- * short-circuits non-words because the search below is exponential.
+ * only produce other orderings of the same group, which is fine. `spellWords` only
+ * marks accepted words as known, because the search below is exponential.
  */
-export function checkUniqueness(puzzle: Puzzle, isWord: (word: string) => boolean): Violation[] {
+export function checkUniqueness(puzzle: Puzzle, words: SpelledWord[]): Violation[] {
 	const out: Violation[] = [];
-	puzzle.words.forEach((path, index) => {
-		const word = spellPath(puzzle.letters, path);
-		if (word.length < 4 || !isWord(word)) return;
+	for (const { index, path, word, known } of words) {
+		if (!known) continue;
 		if (hasOtherSpelling(puzzle.letters, word, path)) {
 			out.push(
 				violation(
@@ -274,7 +292,7 @@ export function checkUniqueness(puzzle: Puzzle, isWord: (word: string) => boolea
 				)
 			);
 		}
-	});
+	}
 	// Rule 8 also covers the Roter Faden: matchFaden compares letters, so a second
 	// group spelling the same text would let a player claim the faden without
 	// ever drawing the line. No dictionary gate — the faden's text is free.
