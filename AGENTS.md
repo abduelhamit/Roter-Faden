@@ -2,6 +2,10 @@
 
 German word-search puzzle on a 6 columns × 8 rows grid of 48 letters.
 
+## Communication
+
+- Ask the user through the `question` tool.
+
 ## Stack & commands
 
 - pnpm (`pnpm-lock.yaml`, `engine-strict=true`). Scripts call `pnpm run` internally; install and run with `pnpm`.
