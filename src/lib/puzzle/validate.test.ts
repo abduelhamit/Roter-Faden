@@ -30,9 +30,9 @@ const expectViolation = (violations: Violation[], expected: Violation): void => 
 	expect(violations).toContainEqual(expected);
 };
 
-const puzzleRow = { kind: 'puzzle' } as const;
-const fadenRow = { kind: 'faden' } as const;
-const wordRow = (index: number): Violation['subject'] => ({ kind: 'word', index });
+const puzzleSubject = { kind: 'puzzle' } as const;
+const fadenSubject = { kind: 'faden' } as const;
+const wordSubject = (index: number): Violation['subject'] => ({ kind: 'word', index });
 
 describe('validatePuzzle', () => {
 	it('accepts the fixture (proves every rule passes on it)', () => {
@@ -45,7 +45,7 @@ describe('validatePuzzle', () => {
 				rule: 'structure',
 				message: 'Die Buchstaben müssen genau 48 Großbuchstaben A–Z sein.',
 				cells: [],
-				subject: puzzleRow
+				subject: puzzleSubject
 			};
 			expectViolation(violationsOf({ ...validPuzzle(), letters: 'Z'.repeat(47) }), violation);
 			expectViolation(violationsOf({ ...validPuzzle(), letters: 'z'.repeat(48) }), violation);
@@ -56,14 +56,14 @@ describe('validatePuzzle', () => {
 				rule: 'structure',
 				message: 'Zellindizes müssen ganze Zahlen zwischen 0 und 47 sein.',
 				cells: [],
-				subject: puzzleRow
+				subject: puzzleSubject
 			};
 			expectViolation(violationsOf({ ...validPuzzle(), faden: [48] }), violation);
 			expectViolation(violationsOf({ ...validPuzzle(), words: [[0, 1, 2, 3, 4, 48]] }), violation);
 		});
 	});
 
-	describe('rule 1: adjacency and cell reuse', () => {
+	describe('adjacency and cell reuse', () => {
 		it('rejects a path that jumps over a cell', () => {
 			const puzzle = validPuzzle();
 			puzzle.words[0] = [0, 2, 3, 4, 5, 6];
@@ -71,7 +71,7 @@ describe('validatePuzzle', () => {
 				rule: 'adjacency',
 				message: 'Themenwort 1 ist nicht benachbart (Zelle 0 → 2).',
 				cells: [0, 2],
-				subject: wordRow(0)
+				subject: wordSubject(0)
 			});
 		});
 
@@ -82,7 +82,7 @@ describe('validatePuzzle', () => {
 				rule: 'adjacency',
 				message: 'Roter Faden ist nicht benachbart (Zelle 36 → 38).',
 				cells: [36, 38],
-				subject: fadenRow
+				subject: fadenSubject
 			});
 		});
 
@@ -93,12 +93,12 @@ describe('validatePuzzle', () => {
 				rule: 'adjacency',
 				message: 'Themenwort 1 verwendet Zelle 1 mehrfach.',
 				cells: [1],
-				subject: wordRow(0)
+				subject: wordSubject(0)
 			});
 		});
 	});
 
-	describe('rule 2: crossings', () => {
+	describe('crossings', () => {
 		it('rejects an X inside one path', () => {
 			const puzzle = validPuzzle();
 			// 0→7 and 1→6 are both diagonals of the 2×2 block 0/1/6/7
@@ -107,7 +107,7 @@ describe('validatePuzzle', () => {
 				rule: 'crossing',
 				message: 'Linien kreuzen sich in einem 2×2-Block ab Zelle 0.',
 				cells: [0, 1, 6, 7],
-				subject: wordRow(0)
+				subject: wordSubject(0)
 			});
 		});
 
@@ -120,7 +120,7 @@ describe('validatePuzzle', () => {
 				rule: 'crossing',
 				message: 'Linien kreuzen sich in einem 2×2-Block ab Zelle 6.',
 				cells: [6, 7, 12, 13],
-				subject: puzzleRow
+				subject: puzzleSubject
 			});
 		});
 
@@ -133,7 +133,7 @@ describe('validatePuzzle', () => {
 				rule: 'crossing',
 				message: 'Linien kreuzen sich in einem 2×2-Block ab Zelle 18.',
 				cells: [18, 19, 24, 25],
-				subject: puzzleRow
+				subject: puzzleSubject
 			});
 		});
 
@@ -143,7 +143,7 @@ describe('validatePuzzle', () => {
 		});
 	});
 
-	describe('rule 3: coverage', () => {
+	describe('coverage', () => {
 		it('rejects an uncovered cell', () => {
 			const puzzle = validPuzzle();
 			puzzle.faden = [36, 37, 38, 39, 40, 41];
@@ -151,23 +151,24 @@ describe('validatePuzzle', () => {
 				rule: 'coverage',
 				message: 'Zelle 42 gehört zu keinem Pfad.',
 				cells: [42],
-				subject: puzzleRow
+				subject: puzzleSubject
 			});
 		});
 
 		it('rejects a cell claimed by two paths', () => {
 			const puzzle = validPuzzle();
 			puzzle.words[1] = [0, 7, 8, 9, 10, 11];
+			// two rows claim cell 0, so neither row alone is at fault
 			expectViolation(violationsOf(puzzle), {
 				rule: 'coverage',
 				message: 'Zelle 0 gehört zu mehreren Pfaden.',
 				cells: [0],
-				subject: wordRow(1)
+				subject: puzzleSubject
 			});
 		});
 	});
 
-	describe('rule 4: Roter Faden edges', () => {
+	describe('Roter Faden edges', () => {
 		it('rejects a faden that touches no opposite edges', () => {
 			const puzzle = validPuzzle();
 			puzzle.faden = [14, 15, 16, 17];
@@ -176,7 +177,7 @@ describe('validatePuzzle', () => {
 				message:
 					'Der Roter Faden muss gegenüberliegende Ränder berühren (links+rechts oder oben+unten).',
 				cells: [14, 15, 16, 17],
-				subject: fadenRow
+				subject: fadenSubject
 			});
 		});
 
@@ -198,13 +199,13 @@ describe('validatePuzzle', () => {
 				.filter((v) => ['word-length', 'dictionary', 'uniqueness'].includes(v.rule))
 				.map((v) => ({ rule: v.rule, subject: v.subject }));
 			expect(wordRules).toEqual([
-				{ rule: 'dictionary', subject: wordRow(0) },
-				{ rule: 'word-length', subject: wordRow(2) }
+				{ rule: 'dictionary', subject: wordSubject(0) },
+				{ rule: 'word-length', subject: wordSubject(2) }
 			]);
 		});
 	});
 
-	describe('rule 5: word length', () => {
+	describe('word length', () => {
 		it('rejects a word shorter than 4 letters', () => {
 			const puzzle = validPuzzle();
 			puzzle.words[0] = [0, 1, 2];
@@ -218,27 +219,27 @@ describe('validatePuzzle', () => {
 					rule: 'word-length',
 					message: 'Themenwort 1 hat weniger als 4 Buchstaben.',
 					cells: [0, 1, 2],
-					subject: wordRow(0)
+					subject: wordSubject(0)
 				}
 			);
-			// rule 7 stays silent: a word rule 5 already rejected never reaches the dictionary
+			// the dictionary stays silent: a word the length rule already rejected never reaches it
 			expect(asked).not.toContain('BES');
 			expect(asked).toHaveLength(THEME_WORDS.length - 1);
 		});
 	});
 
-	describe('rule 6: at least one theme word', () => {
+	describe('at least one theme word', () => {
 		it('rejects a puzzle without theme words', () => {
 			expectViolation(violationsOf({ ...validPuzzle(), words: [] }), {
 				rule: 'word-count',
 				message: 'Mindestens ein Themenwort ist erforderlich.',
 				cells: [],
-				subject: puzzleRow
+				subject: puzzleSubject
 			});
 		});
 	});
 
-	describe('rule 7: dictionary', () => {
+	describe('dictionary', () => {
 		it('rejects a word the dictionary does not know', () => {
 			expectViolation(
 				violationsOf(validPuzzle(), (w) => w !== 'ZUCKER'),
@@ -246,7 +247,7 @@ describe('validatePuzzle', () => {
 					rule: 'dictionary',
 					message: '„ZUCKER“ kommt nicht im Wörterbuch vor.',
 					cells: [12, 13, 14, 15, 16, 17],
-					subject: wordRow(2)
+					subject: wordSubject(2)
 				}
 			);
 		});
@@ -263,13 +264,13 @@ describe('validatePuzzle', () => {
 		});
 	});
 
-	describe('rule 8: uniqueness', () => {
+	describe('uniqueness', () => {
 		it('rejects a second spelling of BESSER over a different group', () => {
 			expectViolation(violationsOf(duplicateBesserPuzzle()), {
 				rule: 'uniqueness',
 				message: '„BESSER“ ist auch mit anderen Feldern bildbar.',
 				cells: [0, 1, 2, 3, 4, 5, 36, 37, 38, 39, 40, 41],
-				subject: wordRow(0)
+				subject: wordSubject(0)
 			});
 		});
 
@@ -282,13 +283,13 @@ describe('validatePuzzle', () => {
 					rule: 'dictionary',
 					message: '„BESSER“ kommt nicht im Wörterbuch vor.',
 					cells: [0, 1, 2, 3, 4, 5],
-					subject: wordRow(0)
+					subject: wordSubject(0)
 				},
 				{
 					rule: 'uniqueness',
 					message: '„SCHLAF“ ist auch mit anderen Feldern bildbar.',
 					cells: [30, 31, 32, 33, 34, 35, 38],
-					subject: wordRow(5)
+					subject: wordSubject(5)
 				}
 			]);
 		});
@@ -302,7 +303,7 @@ describe('validatePuzzle', () => {
 					41, 40, 39, 38, 37, 36, 42, 43, 44, 45, 46, 47, 29, 28, 27, 26, 25, 24, 30, 31, 32, 33,
 					34, 35
 				],
-				subject: fadenRow
+				subject: fadenSubject
 			});
 		});
 
@@ -327,12 +328,12 @@ describe('validatePuzzle', () => {
 					rule: 'coverage',
 					message: `Zelle ${i + 6} gehört zu keinem Pfad.`,
 					cells: [i + 6],
-					subject: puzzleRow
+					subject: puzzleSubject
 				}))
 			);
 		});
 
-		it('run rules 5, 7 and 8 on a partial draft’s paths', () => {
+		it('run the word rules on a partial draft’s paths', () => {
 			const partial: Puzzle = {
 				clue: '',
 				// a second ABCDEF at 42–47 makes the uniqueness rule report on a partial draft
@@ -345,14 +346,15 @@ describe('validatePuzzle', () => {
 				faden: []
 			};
 			const spelled = spellWords(partial, (word) => word === 'ABCDEF');
-			expect(checkWordLength(spelled)).toEqual([
-				{
-					rule: 'word-length',
-					message: 'Themenwort 2 hat weniger als 4 Buchstaben.',
-					cells: [6, 7, 8],
-					subject: wordRow(1)
-				}
-			]);
+			const shortWord: Violation = {
+				rule: 'word-length',
+				message: 'Themenwort 2 hat weniger als 4 Buchstaben.',
+				cells: [6, 7, 8],
+				subject: wordSubject(1)
+			};
+			expect(checkWordLength(spelled)).toEqual([shortWord]);
+			// the length rule needs no dictionary, so a draft is checkable before it has loaded
+			expect(checkWordLength(spellWords(partial))).toEqual([shortWord]);
 			// the short word never reaches the dictionary, the six-letter one does
 			expect(checkDictionary(spelled)).toEqual([]);
 			expect(checkDictionary(spellWords(partial, () => false))).toEqual([
@@ -360,7 +362,7 @@ describe('validatePuzzle', () => {
 					rule: 'dictionary',
 					message: '„ABCDEF“ kommt nicht im Wörterbuch vor.',
 					cells: [0, 1, 2, 3, 4, 5],
-					subject: wordRow(0)
+					subject: wordSubject(0)
 				}
 			]);
 			expect(checkUniqueness(partial, spelled)).toEqual([
@@ -368,7 +370,7 @@ describe('validatePuzzle', () => {
 					rule: 'uniqueness',
 					message: '„ABCDEF“ ist auch mit anderen Feldern bildbar.',
 					cells: [0, 1, 2, 3, 4, 5, 42, 43, 44, 45, 46, 47],
-					subject: wordRow(0)
+					subject: wordSubject(0)
 				}
 			]);
 		});

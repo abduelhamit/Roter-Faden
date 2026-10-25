@@ -59,3 +59,7 @@ _Avoid_: puzzle, template, project
 **Selection** (Auswahl):
 The trace in progress on the board, before it is submitted.
 _Avoid_: path, highlight
+
+**Row** (Zeile):
+One answer's strip in the word panel: the Roter Faden or one theme word, with its input, path and errors. A violation that belongs to two rows or to neither is a puzzle-level violation.
+_Avoid_: line, entry
