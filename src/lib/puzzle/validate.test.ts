@@ -355,6 +355,9 @@ describe('validatePuzzle', () => {
 			expect(checkWordLength(spelled)).toEqual([shortWord]);
 			// the length rule needs no dictionary, so a draft is checkable before it has loaded
 			expect(checkWordLength(spellWords(partial))).toEqual([shortWord]);
+			// without a dictionary the other word rules keep quiet instead of reporting every word
+			expect(spellWords(partial).map((w) => w.status)).toEqual(['unchecked', 'short']);
+			expect(checkDictionary(spellWords(partial))).toEqual([]);
 			// the short word never reaches the dictionary, the six-letter one does
 			expect(checkDictionary(spelled)).toEqual([]);
 			expect(checkDictionary(spellWords(partial, () => false))).toEqual([

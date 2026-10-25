@@ -44,9 +44,9 @@ const MIN_WORD_LENGTH = 4;
 
 /** The whole puzzle, for a violation that belongs to no single row. */
 const PUZZLE_SUBJECT: ViolationSubject = { kind: 'puzzle' };
-const FADEN_ROW: ViolationSubject = { kind: 'faden' };
+const FADEN_SUBJECT: ViolationSubject = { kind: 'faden' };
 /** Theme words carry no text, so they are addressed by their position. */
-const wordRow = (index: number): RowSubject => ({ kind: 'word', index });
+const wordSubject = (index: number): RowSubject => ({ kind: 'word', index });
 
 const violation = (
 	rule: Rule,
@@ -68,8 +68,8 @@ const sameRow = (a: RowSubject, b: RowSubject): boolean =>
 
 /** Every path paired with the row it belongs to, faden first. */
 const paths = (puzzle: Puzzle): Array<[number[], RowSubject]> => [
-	[puzzle.faden, FADEN_ROW],
-	...puzzle.words.map((path, index): [number[], RowSubject] => [path, wordRow(index)])
+	[puzzle.faden, FADEN_SUBJECT],
+	...puzzle.words.map((path, index): [number[], RowSubject] => [path, wordSubject(index)])
 ];
 
 /** A theme word as spelled by its path. */
@@ -78,24 +78,31 @@ export interface SpelledWord {
 	path: number[];
 	word: string;
 	/** Who owns the word: the length rule rejects `short`, the dictionary rule rejects
-	 * `unknown`, the uniqueness rule handles `known`. Assigned once in `spellWords`, so
-	 * the three checks partition the words and run in any order. */
-	status: 'short' | 'unknown' | 'known';
+	 * `unknown`, the uniqueness rule handles `known`. `unchecked` is a word of 4+ letters
+	 * spelled before the dictionary was available. Assigned once in `spellWords`, so the
+	 * three checks partition the words and run in any order. */
+	status: 'short' | 'unchecked' | 'unknown' | 'known';
 }
 
 /**
  * Spells every theme word and asks the dictionary once per word; the length, dictionary
- * and uniqueness rules share it. Omit `isWord` before the dictionary has loaded: every
- * word of 4+ letters is then `unknown`, so only the length rule can fire.
+ * and uniqueness rules share it. Omit `isWord` before the dictionary has loaded: words of
+ * 4+ letters are then `unchecked`, so only the length rule can speak about them.
  */
 export function spellWords(
 	puzzle: Puzzle,
-	isWord: (word: string) => boolean = () => false
+	isWord: ((word: string) => boolean) | null = null
 ): SpelledWord[] {
 	return puzzle.words.map((path, index) => {
 		const word = spellPath(puzzle.letters, path);
 		const status: SpelledWord['status'] =
-			word.length < MIN_WORD_LENGTH ? 'short' : isWord(word) ? 'known' : 'unknown';
+			word.length < MIN_WORD_LENGTH
+				? 'short'
+				: isWord === null
+					? 'unchecked'
+					: isWord(word)
+						? 'known'
+						: 'unknown';
 		return { index, path, word, status };
 	});
 }
@@ -107,8 +114,8 @@ export function spellWords(
  * The dictionary is injected as `isWord`; the Roter Faden is exempt from it.
  * The single checks are exported so the editor can run the decidable ones on a
  * partial draft without duplicating any rule. Run `checkStructure` first: the other
- * checks assume in-range indices. Without a dictionary only the length rule is
- * decidable; faden edges and word count fire on any unfinished draft, so wait until
+ * checks assume in-range indices. All rules except dictionary and uniqueness work
+ * without one; faden edges and word count fire on any unfinished draft, so wait until
  * those rows are drawn.
  * Editor-only: the game must not run this on puzzles decoded from a URL — the
  * uniqueness search is exponential, and crafted input could stall the player's tab.
@@ -270,7 +277,7 @@ export function checkFadenEdges({ faden }: Puzzle): Violation[] {
 		violation(
 			'faden-edges',
 			'Der Roter Faden muss gegenüberliegende Ränder berühren (links+rechts oder oben+unten).',
-			FADEN_ROW,
+			FADEN_SUBJECT,
 			faden
 		)
 	];
@@ -288,7 +295,7 @@ export function checkWordLength(words: SpelledWord[]): Violation[] {
 	const out: Violation[] = [];
 	for (const { index, path, status } of words) {
 		if (status === 'short') {
-			const subject = wordRow(index);
+			const subject = wordSubject(index);
 			out.push(
 				violation(
 					'word-length',
@@ -308,7 +315,7 @@ export function checkDictionary(words: SpelledWord[]): Violation[] {
 	for (const { index, path, word, status } of words) {
 		if (status !== 'unknown') continue;
 		out.push(
-			violation('dictionary', `„${word}“ kommt nicht im Wörterbuch vor.`, wordRow(index), path)
+			violation('dictionary', `„${word}“ kommt nicht im Wörterbuch vor.`, wordSubject(index), path)
 		);
 	}
 	return out;
@@ -329,7 +336,7 @@ export function checkUniqueness({ letters }: Puzzle, words: SpelledWord[]): Viol
 				violation(
 					'uniqueness',
 					`„${word}“ ist auch mit anderen Feldern bildbar.`,
-					wordRow(index),
+					wordSubject(index),
 					mergeCells(path, other)
 				)
 			);
@@ -350,7 +357,7 @@ export function checkFadenUniqueness({ letters, faden }: Puzzle): Violation[] {
 				violation(
 					'uniqueness',
 					'Der Roter Faden ist auch mit anderen Feldern bildbar.',
-					FADEN_ROW,
+					FADEN_SUBJECT,
 					mergeCells(faden, other)
 				)
 			]

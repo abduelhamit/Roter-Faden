@@ -59,8 +59,8 @@ export async function encodePuzzle(puzzle: Puzzle): Promise<string> {
  * `#v1.…` or `v1.…` back to a puzzle; throws PuzzleError on broken URLs and on anything
  * not structurally sound (48 uppercase letters, whole cell indices). Game rules are not
  * checked here: a crafted URL can carry coverage, crossing or dictionary violations, and
- * the game must accept them — `validatePuzzle` belongs to the editor alone (rule 8's
- * search is exponential).
+ * the game must accept them — `validatePuzzle` belongs to the editor alone (the
+ * uniqueness search is exponential).
  */
 export async function decodePuzzle(anchor: string): Promise<Puzzle> {
 	const data = anchor.startsWith('#') ? anchor.slice(1) : anchor;

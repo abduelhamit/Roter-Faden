@@ -29,7 +29,7 @@ export function validPuzzle(): Puzzle {
 }
 
 /**
- * Same puzzle, but row 6 spells BESSER as well — rule 8 must reject it. The new letters
+ * Same puzzle, but row 6 spells BESSER as well — the uniqueness rule must reject it. The new letters
  * also give SCHLAF a second spelling (38→31→32→33→34→35), so assert per word, not globally.
  */
 export function duplicateBesserPuzzle(): Puzzle {
@@ -39,7 +39,7 @@ export function duplicateBesserPuzzle(): Puzzle {
 /**
  * Same puzzle, but the bottom two rows repeat WEINEN and SCHLAF, and the faden snakes
  * back through row 6 — its text NENIEWSCHLAF is also spelled by the two word rows
- * (29→24→30→35). Rule 8 must reject it. The repeated words break uniqueness themselves,
+ * (29→24→30→35). The uniqueness rule must reject it. The repeated words break uniqueness themselves,
  * so assert the faden message, not the error count.
  */
 export function duplicateFadenPuzzle(): Puzzle {

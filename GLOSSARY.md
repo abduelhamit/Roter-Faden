@@ -61,5 +61,5 @@ The trace in progress on the board, before it is submitted.
 _Avoid_: path, highlight
 
 **Row** (Zeile):
-One answer's strip in the word panel: the Roter Faden or one theme word, with its input, path and errors. A violation that belongs to two rows or to neither is a puzzle-level violation.
+One answer's strip in the word panel: the Roter Faden or one theme word, with its input, path and errors. A row subject names one such row; a violation that belongs to two rows or to neither has the puzzle as its subject.
 _Avoid_: line, entry
