@@ -79,15 +79,16 @@ export interface SpelledWord {
 	word: string;
 	/** Who owns the word: the length rule rejects `short`, the dictionary rule rejects
 	 * `unknown`, the uniqueness rule handles `known`. `unchecked` is a word of 4+ letters
-	 * spelled before the dictionary was available. Assigned once in `spellWords`, so the
-	 * three checks partition the words and run in any order. */
+	 * spelled before the dictionary was available, so no word rule owns it. Assigned once
+	 * in `spellWords`, so the checks are independent of their order. */
 	status: 'short' | 'unchecked' | 'unknown' | 'known';
 }
 
 /**
- * Spells every theme word and asks the dictionary once per word; the length, dictionary
- * and uniqueness rules share it. Omit `isWord` before the dictionary has loaded: words of
- * 4+ letters are then `unchecked`, so only the length rule can speak about them.
+ * Spells every theme word and asks the dictionary once per word when given one; the
+ * length, dictionary and uniqueness rules share it. Omit `isWord` before the dictionary
+ * has loaded: words of 4+ letters are then `unchecked`, so only the length rule can
+ * speak about them.
  */
 export function spellWords(
 	puzzle: Puzzle,
@@ -114,9 +115,9 @@ export function spellWords(
  * The dictionary is injected as `isWord`; the Roter Faden is exempt from it.
  * The single checks are exported so the editor can run the decidable ones on a
  * partial draft without duplicating any rule. Run `checkStructure` first: the other
- * checks assume in-range indices. All rules except dictionary and uniqueness work
- * without one; faden edges and word count fire on any unfinished draft, so wait until
- * those rows are drawn.
+ * checks assume in-range indices. All single checks except dictionary and uniqueness
+ * work without one; coverage, faden edges and word count fire on any unfinished draft,
+ * so wait until those rows are drawn.
  * Editor-only: the game must not run this on puzzles decoded from a URL — the
  * uniqueness search is exponential, and crafted input could stall the player's tab.
  */
@@ -224,7 +225,7 @@ export function checkCrossings(puzzle: Puzzle): Violation[] {
 			const up = owner.get(tr * 64 + bl);
 			if (down !== undefined && up !== undefined) {
 				// A self-crossing belongs to its path; a crossing between paths belongs to
-				// neither row alone, so it is a puzzle-level violation.
+				// neither row alone, so the puzzle is the subject.
 				const subject = sameRow(down, up) ? down : PUZZLE_SUBJECT;
 				out.push(
 					violation('crossing', `Linien kreuzen sich in einem 2×2-Block ab Zelle ${tl}.`, subject, [

@@ -358,6 +358,7 @@ describe('validatePuzzle', () => {
 			// without a dictionary the other word rules keep quiet instead of reporting every word
 			expect(spellWords(partial).map((w) => w.status)).toEqual(['unchecked', 'short']);
 			expect(checkDictionary(spellWords(partial))).toEqual([]);
+			expect(checkUniqueness(partial, spellWords(partial))).toEqual([]);
 			// the short word never reaches the dictionary, the six-letter one does
 			expect(checkDictionary(spelled)).toEqual([]);
 			expect(checkDictionary(spellWords(partial, () => false))).toEqual([
