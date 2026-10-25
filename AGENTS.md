@@ -4,7 +4,7 @@ German word-search puzzle on a 6 columns × 8 rows grid of 48 letters.
 
 ## Communication
 
-- Ask the user through the `question` tool.
+- Every question to the user is a `question` tool call, including a skill's question round: the skill's format describes the content (each question with a recommended answer), the tool delivers it. One call per round with all open questions, the recommended option first; reply text carries findings, recommendations and summaries.
 
 ## Stack & commands
 
