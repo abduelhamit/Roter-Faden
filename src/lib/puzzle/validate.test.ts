@@ -11,7 +11,11 @@ import {
 	checkAdjacency,
 	checkCoverage,
 	checkCrossings,
+	checkDictionary,
 	checkFadenEdges,
+	checkUniqueness,
+	checkWordLength,
+	spellWords,
 	validatePuzzle,
 	type Violation
 } from './validate.js';
@@ -303,6 +307,47 @@ describe('validatePuzzle', () => {
 					subject: puzzleRow
 				}))
 			);
+		});
+
+		it('run rules 5, 7 and 8 on a partial draft’s paths', () => {
+			const partial: Puzzle = {
+				clue: '',
+				// a second ABCDEF at 42–47 makes the uniqueness rule report on a partial draft
+				letters: 'ABCDEF' + 'G'.repeat(36) + 'ABCDEF',
+				words: [
+					[0, 1, 2, 3, 4, 5],
+					[6, 7, 8]
+				],
+				// no faden drawn yet: the draft may be partial in any row
+				faden: []
+			};
+			const spelled = spellWords(partial, (word) => word === 'ABCDEF');
+			expect(checkWordLength(spelled)).toEqual([
+				{
+					rule: 'word-length',
+					message: 'Themenwort 2 hat weniger als 4 Buchstaben.',
+					cells: [6, 7, 8],
+					subject: wordRow(1)
+				}
+			]);
+			// the short word never reaches the dictionary, the six-letter one does
+			expect(checkDictionary(spelled)).toEqual([]);
+			expect(checkDictionary(spellWords(partial, () => false))).toEqual([
+				{
+					rule: 'dictionary',
+					message: '„ABCDEF“ kommt nicht im Wörterbuch vor.',
+					cells: [0, 1, 2, 3, 4, 5],
+					subject: wordRow(0)
+				}
+			]);
+			expect(checkUniqueness(partial, spelled)).toEqual([
+				{
+					rule: 'uniqueness',
+					message: '„ABCDEF“ ist auch mit anderen Feldern bildbar.',
+					cells: [0, 1, 2, 3, 4, 5],
+					subject: wordRow(0)
+				}
+			]);
 		});
 	});
 });

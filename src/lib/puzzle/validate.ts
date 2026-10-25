@@ -36,6 +36,9 @@ export interface Violation {
 
 export type ValidationResult = { ok: true } | { ok: false; violations: Violation[] };
 
+/** A theme word shorter than this is not a word: rule 5 rejects it and rules 7 and 8 skip it. */
+const MIN_WORD_LENGTH = 4;
+
 const PUZZLE_ROW: ViolationSubject = { kind: 'puzzle' };
 const FADEN_ROW: ViolationSubject = { kind: 'faden' };
 /** Theme words carry no text, so they are addressed by their position. */
@@ -55,13 +58,17 @@ const rowLabel = (subject: ViolationSubject): string =>
 			? `Themenwort ${subject.index + 1}`
 			: 'Rätsel';
 
+/** Rows are values, so compare their contents instead of object identity. */
+const sameRow = (a: ViolationSubject, b: ViolationSubject): boolean =>
+	a.kind === 'word' && b.kind === 'word' ? a.index === b.index : a.kind === b.kind;
+
 /** Every path paired with the row it belongs to, faden first. */
 const paths = (puzzle: Puzzle): Array<[number[], ViolationSubject]> => [
 	[puzzle.faden, FADEN_ROW],
 	...puzzle.words.map((path, index): [number[], ViolationSubject] => [path, wordRow(index)])
 ];
 
-/** A theme word as spelled by its path, with the dictionary asked once for rules 7 and 8. */
+/** A theme word as spelled by its path. */
 export interface SpelledWord {
 	index: number;
 	path: number[];
@@ -70,20 +77,22 @@ export interface SpelledWord {
 	known: boolean;
 }
 
-/** Spells every theme word and asks the dictionary once per word. */
+/** Spells every theme word and asks the dictionary once per word; rules 5, 7 and 8 share it. */
 export function spellWords(puzzle: Puzzle, isWord: (word: string) => boolean): SpelledWord[] {
 	return puzzle.words.map((path, index) => {
 		const word = spellPath(puzzle.letters, path);
-		return { index, path, word, known: word.length >= 4 && isWord(word) };
+		return { index, path, word, known: word.length >= MIN_WORD_LENGTH && isWord(word) };
 	});
 }
 
 /**
  * Checks every puzzle rule and returns all violations, in a stable order
- * (structure, adjacency, crossings, coverage, faden, words, uniqueness).
+ * (structure, adjacency, crossings, coverage, faden, word length, word count,
+ * dictionary, uniqueness).
  * The dictionary is injected as `isWord`; the Roter Faden is exempt from it.
  * The single checks are exported so the editor can run the decidable ones on a
- * partial draft without duplicating any rule.
+ * partial draft without duplicating any rule. Run `checkStructure` first: the
+ * other checks assume in-range indices.
  * Editor-only: the game must not run this on puzzles decoded from a URL — rule 8's
  * search is exponential, and crafted input could stall the player's tab.
  */
@@ -95,15 +104,15 @@ export function validatePuzzle(
 	const structure = checkStructure(puzzle);
 	if (structure.length > 0) return { ok: false, violations: structure };
 
-	// Rules 7 and 8 both need the dictionary, so it is asked once per word here.
+	// Rules 5, 7 and 8 need the spelled words, so the dictionary is asked once here.
 	const spelled = spellWords(puzzle, isWord);
 	const violations = [
 		...checkAdjacency(puzzle),
 		...checkCrossings(puzzle),
 		...checkCoverage(puzzle),
 		...checkFadenEdges(puzzle),
+		...checkWordLength(spelled),
 		...checkWordCount(puzzle),
-		...checkWordLength(puzzle),
 		...checkDictionary(spelled),
 		...checkUniqueness(puzzle, spelled)
 	];
@@ -179,7 +188,7 @@ export function checkCrossings(puzzle: Puzzle): Violation[] {
 			if (down !== undefined && up !== undefined) {
 				// A self-crossing belongs to its path; a crossing between paths belongs to
 				// neither row alone, so it is a puzzle-level violation.
-				const subject = down === up ? down : PUZZLE_ROW;
+				const subject = sameRow(down, up) ? down : PUZZLE_ROW;
 				out.push(
 					violation('crossing', `Linien kreuzen sich in einem 2×2-Block ab Zelle ${tl}.`, subject, [
 						tl,
@@ -242,22 +251,21 @@ export function checkWordCount({ words }: Puzzle): Violation[] {
 }
 
 /** Rule 5: a theme word has at least 4 letters. */
-export function checkWordLength(puzzle: Puzzle): Violation[] {
+export function checkWordLength(words: SpelledWord[]): Violation[] {
 	const out: Violation[] = [];
-	puzzle.words.forEach((path, index) => {
-		const subject = wordRow(index);
-		const word = spellPath(puzzle.letters, path);
-		if (word.length < 4) {
+	for (const { index, path, word } of words) {
+		if (word.length < MIN_WORD_LENGTH) {
+			const subject = wordRow(index);
 			out.push(
 				violation(
 					'word-length',
-					`${rowLabel(subject)} hat weniger als 4 Buchstaben.`,
+					`${rowLabel(subject)} hat weniger als ${MIN_WORD_LENGTH} Buchstaben.`,
 					subject,
 					path
 				)
 			);
 		}
-	});
+	}
 	return out;
 }
 
@@ -265,7 +273,7 @@ export function checkWordLength(puzzle: Puzzle): Violation[] {
 export function checkDictionary(words: SpelledWord[]): Violation[] {
 	const out: Violation[] = [];
 	for (const { index, path, word, known } of words) {
-		if (word.length < 4 || known) continue;
+		if (word.length < MIN_WORD_LENGTH || known) continue;
 		out.push(
 			violation('dictionary', `„${word}“ kommt nicht im Wörterbuch vor.`, wordRow(index), path)
 		);
