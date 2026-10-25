@@ -21,15 +21,18 @@ export type Rule =
 	| 'dictionary'
 	| 'uniqueness';
 
+/** One drawn path, which has a row of its own in the editor. */
+export type RowSubject = { kind: 'faden' } | { kind: 'word'; index: number };
+
 /** The editor row a violation belongs to: the faden, one theme word or the whole puzzle. */
-export type ViolationSubject =
-	{ kind: 'puzzle' } | { kind: 'faden' } | { kind: 'word'; index: number };
+export type ViolationSubject = RowSubject | { kind: 'puzzle' };
 
 export interface Violation {
 	rule: Rule;
 	/** German message, unchanged since before the violations carried addresses. */
 	message: string;
-	/** Cells the editor should highlight; empty when no single cell is at fault. */
+	/** Cells the editor should highlight; empty when no single cell is at fault. Uniqueness
+	 * violations list the word's own cells first, then the group it collides with. */
 	cells: number[];
 	subject: ViolationSubject;
 }
@@ -42,7 +45,7 @@ const MIN_WORD_LENGTH = 4;
 const PUZZLE_ROW: ViolationSubject = { kind: 'puzzle' };
 const FADEN_ROW: ViolationSubject = { kind: 'faden' };
 /** Theme words carry no text, so they are addressed by their position. */
-const wordRow = (index: number): ViolationSubject => ({ kind: 'word', index });
+const wordRow = (index: number): RowSubject => ({ kind: 'word', index });
 
 const violation = (
 	rule: Rule,
@@ -51,21 +54,18 @@ const violation = (
 	cells: number[] = []
 ): Violation => ({ rule, message, cells, subject });
 
-const rowLabel = (subject: ViolationSubject): string =>
-	subject.kind === 'faden'
-		? 'Roter Faden'
-		: subject.kind === 'word'
-			? `Themenwort ${subject.index + 1}`
-			: 'Rätsel';
+/** The label of a path's row; the puzzle itself has no row to name. */
+const rowLabel = (subject: RowSubject): string =>
+	subject.kind === 'faden' ? 'Roter Faden' : `Themenwort ${subject.index + 1}`;
 
-/** Rows are values, so compare their contents instead of object identity. */
-const sameRow = (a: ViolationSubject, b: ViolationSubject): boolean =>
+/** Row identity: two rows are the same when they are the same word index or both the faden. */
+const sameRow = (a: RowSubject, b: RowSubject): boolean =>
 	a.kind === 'word' && b.kind === 'word' ? a.index === b.index : a.kind === b.kind;
 
 /** Every path paired with the row it belongs to, faden first. */
-const paths = (puzzle: Puzzle): Array<[number[], ViolationSubject]> => [
+const paths = (puzzle: Puzzle): Array<[number[], RowSubject]> => [
 	[puzzle.faden, FADEN_ROW],
-	...puzzle.words.map((path, index): [number[], ViolationSubject] => [path, wordRow(index)])
+	...puzzle.words.map((path, index): [number[], RowSubject] => [path, wordRow(index)])
 ];
 
 /** A theme word as spelled by its path. */
@@ -73,22 +73,24 @@ export interface SpelledWord {
 	index: number;
 	path: number[];
 	word: string;
-	/** 4+ letters and in the dictionary; shorter words never reach the dictionary. */
-	known: boolean;
+	/** `short` never reaches the dictionary; `unknown` never reaches the uniqueness search. */
+	status: 'short' | 'unknown' | 'known';
 }
 
 /** Spells every theme word and asks the dictionary once per word; rules 5, 7 and 8 share it. */
 export function spellWords(puzzle: Puzzle, isWord: (word: string) => boolean): SpelledWord[] {
 	return puzzle.words.map((path, index) => {
 		const word = spellPath(puzzle.letters, path);
-		return { index, path, word, known: word.length >= MIN_WORD_LENGTH && isWord(word) };
+		const status: SpelledWord['status'] =
+			word.length < MIN_WORD_LENGTH ? 'short' : isWord(word) ? 'known' : 'unknown';
+		return { index, path, word, status };
 	});
 }
 
 /**
  * Checks every puzzle rule and returns all violations, in a stable order
- * (structure, adjacency, crossings, coverage, faden, word length, word count,
- * dictionary, uniqueness).
+ * (structure, adjacency, crossings, coverage, faden, word count, then per word:
+ * length, dictionary, uniqueness, and the faden's uniqueness last).
  * The dictionary is injected as `isWord`; the Roter Faden is exempt from it.
  * The single checks are exported so the editor can run the decidable ones on a
  * partial draft without duplicating any rule. Run `checkStructure` first: the
@@ -111,10 +113,15 @@ export function validatePuzzle(
 		...checkCrossings(puzzle),
 		...checkCoverage(puzzle),
 		...checkFadenEdges(puzzle),
-		...checkWordLength(spelled),
 		...checkWordCount(puzzle),
-		...checkDictionary(spelled),
-		...checkUniqueness(puzzle, spelled)
+		// One theme word at a time: violations[0] is then the earliest faulty word,
+		// which is the one the editor shows first.
+		...spelled.flatMap((word) => [
+			...checkWordLength([word]),
+			...checkDictionary([word]),
+			...checkUniqueness(puzzle, [word])
+		]),
+		...checkFadenUniqueness(puzzle)
 	];
 	return violations.length > 0 ? { ok: false, violations } : { ok: true };
 }
@@ -169,7 +176,7 @@ export function checkAdjacency(puzzle: Puzzle): Violation[] {
 
 /** Rule 2: no crossings — two diagonals of a 2×2 block are both walked, within or between paths. */
 export function checkCrossings(puzzle: Puzzle): Violation[] {
-	const owner = new Map<number, ViolationSubject>();
+	const owner = new Map<number, RowSubject>();
 	for (const [path, subject] of paths(puzzle)) {
 		for (let i = 1; i < path.length; i++) {
 			const key = Math.min(path[i - 1], path[i]) * 64 + Math.max(path[i - 1], path[i]);
@@ -253,8 +260,8 @@ export function checkWordCount({ words }: Puzzle): Violation[] {
 /** Rule 5: a theme word has at least 4 letters. */
 export function checkWordLength(words: SpelledWord[]): Violation[] {
 	const out: Violation[] = [];
-	for (const { index, path, word } of words) {
-		if (word.length < MIN_WORD_LENGTH) {
+	for (const { index, path, status } of words) {
+		if (status === 'short') {
 			const subject = wordRow(index);
 			out.push(
 				violation(
@@ -272,8 +279,8 @@ export function checkWordLength(words: SpelledWord[]): Violation[] {
 /** Rule 7: every theme word is in the dictionary; the Roter Faden is exempt. */
 export function checkDictionary(words: SpelledWord[]): Violation[] {
 	const out: Violation[] = [];
-	for (const { index, path, word, known } of words) {
-		if (word.length < MIN_WORD_LENGTH || known) continue;
+	for (const { index, path, word, status } of words) {
+		if (status !== 'unknown') continue;
 		out.push(
 			violation('dictionary', `„${word}“ kommt nicht im Wörterbuch vor.`, wordRow(index), path)
 		);
@@ -282,39 +289,47 @@ export function checkDictionary(words: SpelledWord[]): Violation[] {
 }
 
 /**
- * Rule 8: no other cell group may spell a word. Repeated letters (the BESSER case)
+ * Rule 8: no other cell group may spell a theme word. Repeated letters (the BESSER case)
  * only produce other orderings of the same group, which is fine. `spellWords` only
  * marks accepted words as known, because the search below is exponential.
  */
 export function checkUniqueness(puzzle: Puzzle, words: SpelledWord[]): Violation[] {
 	const out: Violation[] = [];
-	for (const { index, path, word, known } of words) {
-		if (!known) continue;
-		if (hasOtherSpelling(puzzle.letters, word, path)) {
+	for (const { index, path, word, status } of words) {
+		if (status !== 'known') continue;
+		const other = otherSpelling(puzzle.letters, word, path);
+		if (other) {
 			out.push(
 				violation(
 					'uniqueness',
 					`„${word}“ ist auch mit anderen Feldern bildbar.`,
 					wordRow(index),
-					path
+					// Both groups, so the editor can show what the word collides with.
+					[...new Set([...path, ...other])]
 				)
 			);
 		}
 	}
-	// Rule 8 also covers the Roter Faden: matchFaden compares letters, so a second
-	// group spelling the same text would let a player claim the faden without
-	// ever drawing the line. No dictionary gate — the faden's text is free.
-	if (hasOtherSpelling(puzzle.letters, spellPath(puzzle.letters, puzzle.faden), puzzle.faden)) {
-		out.push(
-			violation(
-				'uniqueness',
-				'Der Roter Faden ist auch mit anderen Feldern bildbar.',
-				FADEN_ROW,
-				puzzle.faden
-			)
-		);
-	}
 	return out;
+}
+
+/**
+ * Rule 8 also covers the Roter Faden: matchFaden compares letters, so a second group
+ * spelling the same text would let a player claim the faden without ever drawing the
+ * path. No dictionary gate — the faden's text is free.
+ */
+export function checkFadenUniqueness({ letters, faden }: Puzzle): Violation[] {
+	const other = otherSpelling(letters, spellPath(letters, faden), faden);
+	return other
+		? [
+				violation(
+					'uniqueness',
+					'Der Roter Faden ist auch mit anderen Feldern bildbar.',
+					FADEN_ROW,
+					[...new Set([...faden, ...other])]
+				)
+			]
+		: [];
 }
 
 function neighbors(cell: number): number[] {
@@ -333,21 +348,22 @@ function neighbors(cell: number): number[] {
 }
 
 /**
- * Rule 8: searches the whole grid for every path spelling `word` and reports whether
- * any of them uses a different cell group than the word's own path. Repeated letters
- * (the BESSER case) only produce other orderings of the same group, which is fine.
+ * Rule 8: searches the whole grid for every path spelling `word` and returns the first
+ * one that uses a different cell group than the word's own path, or null when there is
+ * none. Repeated letters (the BESSER case) only produce other orderings of the same
+ * group, which is fine.
  * shortcut: the search is exponential — dictionary words only reach it once accepted,
  * but the faden's text reaches it ungated, and a long text on a letter-repetitive grid
  * can still stall for seconds. Harmless as long as only the editor calls validatePuzzle;
  * upgrade to a node budget if puzzle creation hangs.
  */
-function hasOtherSpelling(letters: string, word: string, ownPath: number[]): boolean {
-	let found = false;
+function otherSpelling(letters: string, word: string, ownPath: number[]): number[] | null {
+	let found: number[] | null = null;
 	const dfs = (cell: number, used: Set<number>, path: number[]): void => {
 		if (found) return;
 		const next = [...path, cell];
 		if (next.length === word.length) {
-			if (!cellsEqual(next, ownPath)) found = true;
+			if (!cellsEqual(next, ownPath)) found = next;
 			return;
 		}
 		for (const n of neighbors(cell)) {

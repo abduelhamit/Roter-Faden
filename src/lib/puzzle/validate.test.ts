@@ -189,6 +189,21 @@ describe('validatePuzzle', () => {
 		});
 	});
 
+	describe('violation order', () => {
+		it('reports the theme word rules one theme word at a time', () => {
+			const puzzle = validPuzzle();
+			puzzle.words[2] = [12, 13, 14]; // word 3 is too short
+			// word 1 is not in the dictionary
+			const wordRules = violationsOf(puzzle, (word) => word !== 'BESSER')
+				.filter((v) => ['word-length', 'dictionary', 'uniqueness'].includes(v.rule))
+				.map((v) => ({ rule: v.rule, subject: v.subject }));
+			expect(wordRules).toEqual([
+				{ rule: 'dictionary', subject: wordRow(0) },
+				{ rule: 'word-length', subject: wordRow(2) }
+			]);
+		});
+	});
+
 	describe('rule 5: word length', () => {
 		it('rejects a word shorter than 4 letters', () => {
 			const puzzle = validPuzzle();
@@ -253,7 +268,7 @@ describe('validatePuzzle', () => {
 			expectViolation(violationsOf(duplicateBesserPuzzle()), {
 				rule: 'uniqueness',
 				message: '„BESSER“ ist auch mit anderen Feldern bildbar.',
-				cells: [0, 1, 2, 3, 4, 5],
+				cells: [0, 1, 2, 3, 4, 5, 36, 37, 38, 39, 40, 41],
 				subject: wordRow(0)
 			});
 		});
@@ -261,16 +276,21 @@ describe('validatePuzzle', () => {
 		it('skips the uniqueness search once the dictionary rejected the word', () => {
 			// the search is exponential, so it must never run for a word that is not a word
 			const violations = violationsOf(duplicateBesserPuzzle(), (w) => w !== 'BESSER');
-			expectViolation(violations, {
-				rule: 'dictionary',
-				message: '„BESSER“ kommt nicht im Wörterbuch vor.',
-				cells: [0, 1, 2, 3, 4, 5],
-				subject: wordRow(0)
-			});
-			// only BESSER was rejected — SCHLAF still reports its own second spelling here
-			expect(violations.some((v) => v.rule === 'uniqueness' && v.message.includes('BESSER'))).toBe(
-				false
-			);
+			// the whole list: only BESSER was rejected, SCHLAF still reports its own second spelling
+			expect(violations).toEqual([
+				{
+					rule: 'dictionary',
+					message: '„BESSER“ kommt nicht im Wörterbuch vor.',
+					cells: [0, 1, 2, 3, 4, 5],
+					subject: wordRow(0)
+				},
+				{
+					rule: 'uniqueness',
+					message: '„SCHLAF“ ist auch mit anderen Feldern bildbar.',
+					cells: [30, 31, 32, 33, 34, 35, 38],
+					subject: wordRow(5)
+				}
+			]);
 		});
 
 		it('rejects a second spelling of the faden over a different group', () => {
@@ -278,7 +298,10 @@ describe('validatePuzzle', () => {
 			expectViolation(violationsOf(puzzle), {
 				rule: 'uniqueness',
 				message: 'Der Roter Faden ist auch mit anderen Feldern bildbar.',
-				cells: puzzle.faden,
+				cells: [
+					41, 40, 39, 38, 37, 36, 42, 43, 44, 45, 46, 47, 29, 28, 27, 26, 25, 24, 30, 31, 32, 33,
+					34, 35
+				],
 				subject: fadenRow
 			});
 		});
@@ -344,7 +367,7 @@ describe('validatePuzzle', () => {
 				{
 					rule: 'uniqueness',
 					message: '„ABCDEF“ ist auch mit anderen Feldern bildbar.',
-					cells: [0, 1, 2, 3, 4, 5],
+					cells: [0, 1, 2, 3, 4, 5, 42, 43, 44, 45, 46, 47],
 					subject: wordRow(0)
 				}
 			]);
