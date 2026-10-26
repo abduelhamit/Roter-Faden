@@ -7,6 +7,7 @@ import {
 	isCells,
 	rowLabel,
 	spellPath,
+	type Issue,
 	type Puzzle,
 	type RowSubject,
 	type Subject
@@ -24,15 +25,9 @@ export type Rule =
 	| 'dictionary'
 	| 'uniqueness';
 
-export interface Violation {
-	rule: Rule;
-	/** German message, unchanged since before the violations carried addresses. */
-	message: string;
-	/** Cells the editor should highlight; empty when no single cell is at fault. Uniqueness
-	 * violations list the word's own cells first, then the group it collides with. */
-	cells: number[];
-	subject: Subject;
-}
+/** A puzzle-rule breach. Uniqueness violations list the word's own cells first, then the
+ * group it collides with. */
+export type Violation = Issue<Rule>;
 
 export type ValidationResult = { ok: true } | { ok: false; violations: Violation[] };
 

@@ -28,6 +28,16 @@ export type Subject = RowSubject | { kind: 'puzzle' };
 export const rowLabel = (subject: RowSubject): string =>
 	subject.kind === 'faden' ? 'Roter Faden' : `Themenwort ${subject.index + 1}`;
 
+/** A problem the editor shows: a validation violation or a draft-only issue. */
+export interface Issue<R extends string> {
+	rule: R;
+	/** German message for the editor. */
+	message: string;
+	/** Cells the editor should highlight; empty when no single cell is at fault. */
+	cells: number[];
+	subject: Subject;
+}
+
 /** Everything outside A–Z, gone. */
 export const stripNonAtoZ = (raw: string): string => raw.replace(/[^A-Z]/g, '');
 

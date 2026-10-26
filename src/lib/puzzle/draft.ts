@@ -1,4 +1,4 @@
-import { CELL_COUNT, normalizeText, rowLabel, type RowSubject, type Subject } from './model.js';
+import { CELL_COUNT, normalizeText, rowLabel, type Issue, type RowSubject } from './model.js';
 
 /** One answer's row in the editor: its text and the path drawn for it, if any. */
 export interface DraftRow {
@@ -15,21 +15,14 @@ export interface Draft {
 	clue: string;
 	faden: DraftRow;
 	words: DraftRow[];
-	/** Milliseconds since the epoch; every edit refreshes it. */
+	/** Milliseconds since the epoch; every edit stamps it, and a saved draft keeps that value. */
 	changedAt: number;
 }
 
 /** Every editor-only check. None of these are puzzle rules. */
 export type DraftRule = 'empty-clue' | 'missing-path' | 'length-mismatch';
 
-export interface DraftIssue {
-	rule: DraftRule;
-	/** German message for the editor. */
-	message: string;
-	/** Cells the editor should highlight; empty when no single cell is at fault. */
-	cells: number[];
-	subject: Subject;
-}
+export type DraftIssue = Issue<DraftRule>;
 
 /** A new, empty draft with an id that stays put for the draft's whole life. */
 export const createDraft = (): Draft => ({
@@ -78,13 +71,19 @@ export const removeWord = (draft: Draft, index: number): Draft =>
 
 export const setClue = (draft: Draft, clue: string): Draft => touch({ ...draft, clue });
 
+/** The draft's rows paired with the subject that addresses them, faden first. */
+const rows = (draft: Draft): Array<[DraftRow, RowSubject]> => [
+	[draft.faden, { kind: 'faden' }],
+	...draft.words.map((row, index): [DraftRow, RowSubject] => [row, { kind: 'word', index }])
+];
+
 /**
  * The 48 cells as one string, blank cells a space. Each path writes its row's text in
  * path order; a cell past the end of its row's text stays blank.
  */
 export function draftLetters(draft: Draft): string {
 	const letters = new Array<string>(CELL_COUNT).fill(' ');
-	for (const row of [draft.faden, ...draft.words]) {
+	for (const [row] of rows(draft)) {
 		row.path?.forEach((cell, index) => {
 			// The draft is lenient, so an index outside the grid must not stretch the string.
 			if (cell < 0 || cell >= CELL_COUNT) return;
@@ -110,12 +109,7 @@ export function checkDraft(draft: Draft): DraftIssue[] {
 			subject: { kind: 'puzzle' }
 		});
 	}
-	const subjects: RowSubject[] = [
-		{ kind: 'faden' },
-		...draft.words.map((_, index): RowSubject => ({ kind: 'word', index }))
-	];
-	for (const subject of subjects) {
-		const row = rowOf(draft, subject);
+	for (const [row, subject] of rows(draft)) {
 		if (!row.path || row.path.length === 0) {
 			out.push({
 				rule: 'missing-path',
