@@ -5,8 +5,11 @@ import {
 	cellsEqual,
 	isAdjacent,
 	isCells,
+	rowLabel,
 	spellPath,
-	type Puzzle
+	type Puzzle,
+	type RowSubject,
+	type Subject
 } from './model.js';
 
 /** Every rule `validatePuzzle` can report. */
@@ -21,12 +24,6 @@ export type Rule =
 	| 'dictionary'
 	| 'uniqueness';
 
-/** One drawn path, which has a row of its own in the editor. */
-export type RowSubject = { kind: 'faden' } | { kind: 'word'; index: number };
-
-/** The editor row a violation belongs to: the faden, one theme word or the whole puzzle. */
-export type ViolationSubject = RowSubject | { kind: 'puzzle' };
-
 export interface Violation {
 	rule: Rule;
 	/** German message, unchanged since before the violations carried addresses. */
@@ -34,7 +31,7 @@ export interface Violation {
 	/** Cells the editor should highlight; empty when no single cell is at fault. Uniqueness
 	 * violations list the word's own cells first, then the group it collides with. */
 	cells: number[];
-	subject: ViolationSubject;
+	subject: Subject;
 }
 
 export type ValidationResult = { ok: true } | { ok: false; violations: Violation[] };
@@ -43,21 +40,17 @@ export type ValidationResult = { ok: true } | { ok: false; violations: Violation
 const MIN_WORD_LENGTH = 4;
 
 /** The whole puzzle, for a violation that belongs to no single row. */
-const PUZZLE_SUBJECT: ViolationSubject = { kind: 'puzzle' };
-const FADEN_SUBJECT: ViolationSubject = { kind: 'faden' };
+const PUZZLE_SUBJECT: Subject = { kind: 'puzzle' };
+const FADEN_SUBJECT: Subject = { kind: 'faden' };
 /** Theme words carry no text, so they are addressed by their position. */
 const wordSubject = (index: number): RowSubject => ({ kind: 'word', index });
 
 const violation = (
 	rule: Rule,
 	message: string,
-	subject: ViolationSubject,
+	subject: Subject,
 	cells: number[] = []
 ): Violation => ({ rule, message, cells, subject });
-
-/** The label of a path's row; the puzzle itself has no row to name. */
-const rowLabel = (subject: RowSubject): string =>
-	subject.kind === 'faden' ? 'Roter Faden' : `Themenwort ${subject.index + 1}`;
 
 /** Both cell groups in one list, so the editor can show what the word collides with. */
 const mergeCells = (own: number[], other: number[]): number[] => [...new Set([...own, ...other])];

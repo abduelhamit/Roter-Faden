@@ -18,6 +18,16 @@ export interface Puzzle {
 	faden: number[];
 }
 
+/** One drawn path's row in the editor: the Roter Faden or one theme word. */
+export type RowSubject = { kind: 'faden' } | { kind: 'word'; index: number };
+
+/** The subject of a problem: a row, or the puzzle when no single row is at fault. */
+export type Subject = RowSubject | { kind: 'puzzle' };
+
+/** The German name of a row; the puzzle itself has no row to name. */
+export const rowLabel = (subject: RowSubject): string =>
+	subject.kind === 'faden' ? 'Roter Faden' : `Themenwort ${subject.index + 1}`;
+
 /** Everything outside A–Z, gone. */
 export const stripNonAtoZ = (raw: string): string => raw.replace(/[^A-Z]/g, '');
 
