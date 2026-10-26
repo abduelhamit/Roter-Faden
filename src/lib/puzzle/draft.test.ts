@@ -82,6 +82,16 @@ describe('draftLetters', () => {
 		expect(letters).toHaveLength(48);
 		expect(letters[47]).toBe('R');
 	});
+
+	it('keeps the first row’s letter when paths share a cell', () => {
+		let draft = addWord(addWord(createDraft(), 'AB'), 'CD');
+		draft = setRowPath(draft, word(0), [5, 6]);
+		draft = setRowPath(draft, word(1), [5, 7]);
+		const letters = draftLetters(draft);
+		expect(letters[5]).toBe('A');
+		expect(letters[6]).toBe('B');
+		expect(letters[7]).toBe('D');
+	});
 });
 
 describe('text entry', () => {
@@ -97,9 +107,8 @@ describe('text entry', () => {
 		expect(draft.clue).toBe('Grüße aus Köln & Straße');
 	});
 
-	it('ignores a word that normalizes to nothing', () => {
-		const draft = createDraft();
-		expect(addWord(draft, ' !!! ')).toBe(draft);
+	it('adds a row even when the word normalizes to nothing', () => {
+		expect(addWord(createDraft(), ' !!! ').words).toEqual([{ text: '', path: null }]);
 	});
 });
 
@@ -147,7 +156,7 @@ describe('checkDraft', () => {
 	});
 
 	it('treats an empty path as undrawn, like a missing one', () => {
-		const draft = setRowPath(setRowText(setClue(createDraft(), 'Zeit'), faden, 'ROT'), faden, []);
+		const draft = setRowPath(setClue(createDraft(), 'Zeit'), faden, []);
 		issue(draft, {
 			rule: 'missing-path',
 			message: 'Roter Faden hat noch keinen Pfad.',
@@ -155,6 +164,17 @@ describe('checkDraft', () => {
 			subject: faden
 		});
 		expect(checkDraft(draft).map(({ rule }) => rule)).not.toContain('length-mismatch');
+	});
+
+	it('still reports a length mismatch against an empty path', () => {
+		let draft = setRowText(setClue(createDraft(), 'Zeit'), faden, 'ROT');
+		draft = setRowPath(draft, faden, []);
+		expect(checkDraft(draft)).toContainEqual({
+			rule: 'length-mismatch',
+			message: 'Roter Faden hat 3 Buchstaben, der Pfad aber 0 Zellen.',
+			cells: [],
+			subject: faden
+		});
 	});
 
 	it('re-raises missing-path once a drawn path is cleared', () => {

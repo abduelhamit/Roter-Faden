@@ -56,11 +56,9 @@ export const setRowText = (draft: Draft, subject: RowSubject, raw: string): Draf
 export const setRowPath = (draft: Draft, subject: RowSubject, path: number[] | null): Draft =>
 	withRow(draft, subject, { ...rowOf(draft, subject), path });
 
-/** A word that normalizes to nothing is not added. */
-export const addWord = (draft: Draft, raw: string): Draft => {
-	const text = normalizeText(raw);
-	return text === '' ? draft : touch({ ...draft, words: [...draft.words, { text, path: null }] });
-};
+/** A word that normalizes to nothing is still a row, so the editor can report its missing text. */
+export const addWord = (draft: Draft, raw: string): Draft =>
+	touch({ ...draft, words: [...draft.words, { text: normalizeText(raw), path: null }] });
 
 /** Removing a row removes its path too, so its cells and letters go back to the pool. */
 export const removeWord = (draft: Draft, index: number): Draft =>
@@ -79,14 +77,18 @@ const rows = (draft: Draft): Array<[DraftRow, RowSubject]> => [
 
 /**
  * The 48 cells as one string, blank cells a space. Each path writes its row's text in
- * path order; a cell past the end of its row's text stays blank.
+ * path order; a cell past the end of its row's text stays blank. A cell claimed twice
+ * keeps its first claim, which may be blank.
  */
 export function draftLetters(draft: Draft): string {
 	const letters = new Array<string>(CELL_COUNT).fill(' ');
+	const claimed = new Set<number>();
 	for (const [row] of rows(draft)) {
 		row.path?.forEach((cell, index) => {
 			// The draft is lenient, so an index outside the grid must not stretch the string.
 			if (cell < 0 || cell >= CELL_COUNT) return;
+			if (claimed.has(cell)) return;
+			claimed.add(cell);
 			if (row.text[index] !== undefined) letters[cell] = row.text[index];
 		});
 	}
@@ -95,9 +97,8 @@ export function draftLetters(draft: Draft): string {
 
 /**
  * The editor-only checks, kept out of `validatePuzzle`: an empty clue, a row without a
- * path (null or empty) and a text length that differs from its path length. The first
- * issue of a row is its missing path, so a length mismatch is only reported once a path
- * is drawn.
+ * path (null or empty) and a text length that differs from its path length. A length
+ * mismatch is reported for any path array, so an empty path with text reports both.
  */
 export function checkDraft(draft: Draft): DraftIssue[] {
 	const out: DraftIssue[] = [];
@@ -117,7 +118,8 @@ export function checkDraft(draft: Draft): DraftIssue[] {
 				cells: [],
 				subject
 			});
-		} else if (row.text.length !== row.path.length) {
+		}
+		if (row.path && row.text.length !== row.path.length) {
 			out.push({
 				rule: 'length-mismatch',
 				message: `${rowLabel(subject)} hat ${row.text.length} Buchstaben, der Pfad aber ${row.path.length} Zellen.`,
