@@ -65,5 +65,5 @@ The trace in progress on the board, before it is submitted.
 _Avoid_: path, highlight
 
 **Row** (Zeile):
-One answer's strip in the word panel: the Roter Faden or one theme word, with its input, path and problems. A row subject names one such row; a violation that belongs to two rows or to neither has the puzzle as its subject.
+One answer's strip in the word panel: the Roter Faden or one theme word, with its input, path and problems. A row subject names one such row; a validation violation is a problem too, and one that belongs to two rows or to neither has the puzzle as its subject.
 _Avoid_: line, entry

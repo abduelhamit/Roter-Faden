@@ -45,6 +45,14 @@ export interface Problem<R extends string> {
 	subject: Subject;
 }
 
+/** One problem value; `cells` is copied so the caller cannot change it later. */
+export const problem = <R extends string>(
+	rule: R,
+	message: string,
+	subject: Subject,
+	cells: number[] = []
+): Problem<R> => ({ rule, message, cells: [...cells], subject });
+
 /** Everything outside A–Z, gone. */
 export const stripNonAtoZ = (raw: string): string => raw.replace(/[^A-Z]/g, '');
 

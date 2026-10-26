@@ -9,6 +9,7 @@ The editor could ask for the 48 letters first and then check that the words fit 
 
 ## Consequences
 
-- A draft row still lands the prefix letters its path covers while its text is shorter than the path, so the editor can show partial work; only validation requires the two lengths to match.
+- A draft row still lands the prefix letters its path covers while its text is shorter than the path, so the editor can show partial work; validation requires the two lengths to match, and `checkDraft` flags a mismatch early so the editor need not wait for it.
+- Two draft paths may claim the same cell: the first row that has a letter for it keeps it (the faden comes first, then the theme words), and a later row's letter there is dropped. A row whose text ends before the cell writes nothing, so a later row can still fill it. Validation's coverage rule reports the shared cell when the draft is validated.
 - Reversing the decision means adding a letter input and a "the path spells the selected word" rule to the editor, plus a way to reconcile typed letters with already drawn paths.
 - The letters of a finished puzzle are never stored twice: the draft keeps only words, texts and paths, and the puzzle shape keeps only letters and paths.

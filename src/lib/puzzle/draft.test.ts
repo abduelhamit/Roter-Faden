@@ -137,6 +137,15 @@ describe('text entry', () => {
 	});
 });
 
+describe('setRowPath', () => {
+	it('copies the path so a caller mutating its array cannot change the draft later', () => {
+		const path = [42, 43, 44];
+		const draft = setRowPath(createDraft(), faden, path);
+		path.push(45);
+		expect(draft.faden.path).toEqual([42, 43, 44]);
+	});
+});
+
 describe('removeWord', () => {
 	it('frees the deleted word’s cells and letters', () => {
 		let draft = addWord(addWord(createDraft(), 'BESSER'), 'DIENST');
@@ -180,23 +189,17 @@ describe('checkDraft', () => {
 		});
 	});
 
-	it('treats an empty path as undrawn, like a missing one', () => {
-		const draft = withFaden('', []);
-		expectProblem(draft, {
-			rule: 'missing-path',
-			message: 'Roter Faden hat noch keinen Pfad.',
-			cells: [],
-			subject: faden
-		});
-	});
-
-	it('still reports a length mismatch against an empty path', () => {
-		expect(checkDraft(withFaden('ROT', []))).toContainEqual({
-			rule: 'length-mismatch',
-			message: 'Roter Faden hat 3 Buchstaben, der Pfad aber 0 Zellen.',
-			cells: [],
-			subject: faden
-		});
+	it('stores an empty path as null, so the row reports one problem, not two', () => {
+		const draft = withFaden('ROT', []);
+		expect(draft.faden.path).toBeNull();
+		expect(checkDraft(draft).filter((problem) => problem.subject.kind === 'faden')).toEqual([
+			{
+				rule: 'missing-path',
+				message: 'Roter Faden hat noch keinen Pfad.',
+				cells: [],
+				subject: faden
+			}
+		]);
 	});
 
 	it('re-raises missing-path once a drawn path is cleared', () => {
@@ -217,6 +220,17 @@ describe('checkDraft', () => {
 			cells: [42, 43, 44, 45],
 			subject: faden
 		});
+	});
+
+	it('uses the German singular for one letter or one cell', () => {
+		const oneLetter = checkDraft(withFaden('R', [42, 43])).find(
+			(problem) => problem.rule === 'length-mismatch'
+		);
+		expect(oneLetter?.message).toBe('Roter Faden hat 1 Buchstabe, der Pfad aber 2 Zellen.');
+		const oneCell = checkDraft(withFaden('ROT', [42])).find(
+			(problem) => problem.rule === 'length-mismatch'
+		);
+		expect(oneCell?.message).toBe('Roter Faden hat 3 Buchstaben, der Pfad aber 1 Zelle.');
 	});
 
 	it('reports a theme word’s length mismatch on that word', () => {

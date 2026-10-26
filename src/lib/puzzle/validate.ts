@@ -5,6 +5,7 @@ import {
 	cellsEqual,
 	isAdjacent,
 	isCells,
+	problem,
 	rowLabel,
 	spellPath,
 	withSubjects,
@@ -40,13 +41,6 @@ const PUZZLE_SUBJECT: Subject = { kind: 'puzzle' };
 const FADEN_SUBJECT: Subject = { kind: 'faden' };
 /** Theme words carry no text, so they are addressed by their position. */
 const wordSubject = (index: number): RowSubject => ({ kind: 'word', index });
-
-const violation = (
-	rule: Rule,
-	message: string,
-	subject: Subject,
-	cells: number[] = []
-): Violation => ({ rule, message, cells, subject });
 
 /** Both cell groups in one list, so the editor can show what the word collides with. */
 const mergeCells = (own: number[], other: number[]): number[] => [...new Set([...own, ...other])];
@@ -137,7 +131,7 @@ export function checkStructure(puzzle: Puzzle): Violation[] {
 	const out: Violation[] = [];
 	if (typeof puzzle.letters !== 'string' || !/^[A-Z]{48}$/.test(puzzle.letters)) {
 		out.push(
-			violation(
+			problem(
 				'structure',
 				'Die Buchstaben müssen genau 48 Großbuchstaben A–Z sein.',
 				PUZZLE_SUBJECT
@@ -146,7 +140,7 @@ export function checkStructure(puzzle: Puzzle): Violation[] {
 	}
 	if (!isCells(puzzle.faden) || !Array.isArray(puzzle.words) || !puzzle.words.every(isCells)) {
 		out.push(
-			violation(
+			problem(
 				'structure',
 				'Zellindizes müssen ganze Zahlen zwischen 0 und 47 sein.',
 				PUZZLE_SUBJECT
@@ -164,7 +158,7 @@ export function checkAdjacency(puzzle: Puzzle): Violation[] {
 		for (let i = 0; i < path.length; i++) {
 			if (i > 0 && !isAdjacent(path[i - 1], path[i])) {
 				out.push(
-					violation(
+					problem(
 						'adjacency',
 						`${rowLabel(subject)} ist nicht benachbart (Zelle ${path[i - 1]} → ${path[i]}).`,
 						subject,
@@ -174,7 +168,7 @@ export function checkAdjacency(puzzle: Puzzle): Violation[] {
 			}
 			if (seen.has(path[i])) {
 				out.push(
-					violation(
+					problem(
 						'adjacency',
 						`${rowLabel(subject)} verwendet Zelle ${path[i]} mehrfach.`,
 						subject,
@@ -211,7 +205,7 @@ export function checkCrossings(puzzle: Puzzle): Violation[] {
 				// neither row alone, so the puzzle is the subject.
 				const subject = sameRow(down, up) ? down : PUZZLE_SUBJECT;
 				out.push(
-					violation('crossing', `Linien kreuzen sich in einem 2×2-Block ab Zelle ${tl}.`, subject, [
+					problem('crossing', `Linien kreuzen sich in einem 2×2-Block ab Zelle ${tl}.`, subject, [
 						tl,
 						tr,
 						bl,
@@ -233,7 +227,7 @@ export function checkCoverage(puzzle: Puzzle): Violation[] {
 			if (owner[cell] !== -1 && owner[cell] !== id) {
 				// Two rows claim the cell, so it belongs to neither alone.
 				out.push(
-					violation('coverage', `Zelle ${cell} gehört zu mehreren Pfaden.`, PUZZLE_SUBJECT, [cell])
+					problem('coverage', `Zelle ${cell} gehört zu mehreren Pfaden.`, PUZZLE_SUBJECT, [cell])
 				);
 			} else {
 				owner[cell] = id;
@@ -242,9 +236,7 @@ export function checkCoverage(puzzle: Puzzle): Violation[] {
 	});
 	for (let cell = 0; cell < CELL_COUNT; cell++) {
 		if (owner[cell] === -1) {
-			out.push(
-				violation('coverage', `Zelle ${cell} gehört zu keinem Pfad.`, PUZZLE_SUBJECT, [cell])
-			);
+			out.push(problem('coverage', `Zelle ${cell} gehört zu keinem Pfad.`, PUZZLE_SUBJECT, [cell]));
 		}
 	}
 	return out;
@@ -258,7 +250,7 @@ export function checkFadenEdges({ faden }: Puzzle): Violation[] {
 	const bottom = faden.some((c) => c >= CELL_COUNT - COLS);
 	if ((left && right) || (top && bottom)) return [];
 	return [
-		violation(
+		problem(
 			'faden-edges',
 			'Der Roter Faden muss gegenüberliegende Ränder berühren (links+rechts oder oben+unten).',
 			FADEN_SUBJECT,
@@ -270,7 +262,7 @@ export function checkFadenEdges({ faden }: Puzzle): Violation[] {
 /** At least one theme word exists. */
 export function checkWordCount({ words }: Puzzle): Violation[] {
 	return words.length < 1
-		? [violation('word-count', 'Mindestens ein Themenwort ist erforderlich.', PUZZLE_SUBJECT)]
+		? [problem('word-count', 'Mindestens ein Themenwort ist erforderlich.', PUZZLE_SUBJECT)]
 		: [];
 }
 
@@ -281,7 +273,7 @@ export function checkWordLength(words: SpelledWord[]): Violation[] {
 		if (status === 'short') {
 			const subject = wordSubject(index);
 			out.push(
-				violation(
+				problem(
 					'word-length',
 					`${rowLabel(subject)} hat weniger als ${MIN_WORD_LENGTH} Buchstaben.`,
 					subject,
@@ -299,7 +291,7 @@ export function checkDictionary(words: SpelledWord[]): Violation[] {
 	for (const { index, path, word, status } of words) {
 		if (status !== 'unknown') continue;
 		out.push(
-			violation('dictionary', `„${word}“ kommt nicht im Wörterbuch vor.`, wordSubject(index), path)
+			problem('dictionary', `„${word}“ kommt nicht im Wörterbuch vor.`, wordSubject(index), path)
 		);
 	}
 	return out;
@@ -317,7 +309,7 @@ export function checkUniqueness({ letters }: Puzzle, words: SpelledWord[]): Viol
 		const other = collidingPath(letters, word, path);
 		if (other) {
 			out.push(
-				violation(
+				problem(
 					'uniqueness',
 					`„${word}“ ist auch mit anderen Feldern bildbar.`,
 					wordSubject(index),
@@ -338,7 +330,7 @@ export function checkFadenUniqueness({ letters, faden }: Puzzle): Violation[] {
 	const other = collidingPath(letters, spellPath(letters, faden), faden);
 	return other
 		? [
-				violation(
+				problem(
 					'uniqueness',
 					'Der Roter Faden ist auch mit anderen Feldern bildbar.',
 					FADEN_SUBJECT,

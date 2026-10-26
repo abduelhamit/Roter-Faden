@@ -1,6 +1,7 @@
 import {
 	CELL_COUNT,
 	normalizeText,
+	problem,
 	rowLabel,
 	withSubjects,
 	type Problem,
@@ -11,7 +12,7 @@ import {
 export interface DraftRow {
 	/** Normalized A–Z. May be shorter or longer than the path. */
 	text: string;
-	/** Drawn cells in order, or null while the row is undrawn. An empty path also counts as undrawn. */
+	/** Drawn cells in order, or null while the row is undrawn; `setRowPath` stores an empty path as null. */
 	path: number[] | null;
 }
 
@@ -58,7 +59,10 @@ export const setRowText = (draft: Draft, subject: RowSubject, raw: string): Draf
 	updateRow(draft, subject, (row) => ({ ...row, text: normalizeText(raw) }));
 
 export const setRowPath = (draft: Draft, subject: RowSubject, path: number[] | null): Draft =>
-	updateRow(draft, subject, (row) => ({ ...row, path }));
+	updateRow(draft, subject, (row) => ({
+		...row,
+		path: path === null || path.length === 0 ? null : [...path]
+	}));
 
 /** A word that normalizes to nothing is kept as an empty row. */
 export const addWord = (draft: Draft, raw: string): Draft =>
@@ -92,38 +96,31 @@ export function draftLetters(draft: Draft): string {
 	return letters.join('');
 }
 
+/** German count with the right plural: "1 Buchstabe", "3 Buchstaben". */
+const plural = (count: number, one: string, many: string): string =>
+	`${count} ${count === 1 ? one : many}`;
+
 /**
  * The editor-only checks, kept out of `validatePuzzle`: an empty clue, a row without a
- * path (null or empty) and a text length that differs from its path length. A length
- * mismatch is reported for any path array, so an empty path with text reports both.
+ * path, and a text length that differs from its path length.
  */
 export function checkDraft(draft: Draft): DraftProblem[] {
 	const out: DraftProblem[] = [];
 	if (draft.clue.trim() === '') {
-		out.push({
-			rule: 'empty-clue',
-			message: 'Der Hinweis fehlt.',
-			cells: [],
-			subject: { kind: 'puzzle' }
-		});
+		out.push(problem('empty-clue', 'Der Hinweis fehlt.', { kind: 'puzzle' }));
 	}
 	for (const [row, subject] of withSubjects(draft.faden, draft.words)) {
-		const path = row.path;
-		if (!path || path.length === 0) {
-			out.push({
-				rule: 'missing-path',
-				message: `${rowLabel(subject)} hat noch keinen Pfad.`,
-				cells: [],
-				subject
-			});
-		}
-		if (path && row.text.length !== path.length) {
-			out.push({
-				rule: 'length-mismatch',
-				message: `${rowLabel(subject)} hat ${row.text.length} Buchstaben, der Pfad aber ${path.length} Zellen.`,
-				cells: path,
-				subject
-			});
+		if (row.path === null || row.path.length === 0) {
+			out.push(problem('missing-path', `${rowLabel(subject)} hat noch keinen Pfad.`, subject));
+		} else if (row.text.length !== row.path.length) {
+			out.push(
+				problem(
+					'length-mismatch',
+					`${rowLabel(subject)} hat ${plural(row.text.length, 'Buchstabe', 'Buchstaben')}, der Pfad aber ${plural(row.path.length, 'Zelle', 'Zellen')}.`,
+					subject,
+					row.path
+				)
+			);
 		}
 	}
 	return out;
