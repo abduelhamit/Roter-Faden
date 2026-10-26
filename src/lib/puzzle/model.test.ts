@@ -6,6 +6,7 @@ import {
 	isAdjacent,
 	isPuzzleShape,
 	normalizeText,
+	problem,
 	spellPath
 } from './model.js';
 
@@ -65,6 +66,15 @@ describe('spellPath', () => {
 	it('reads letters along the path and treats out-of-range cells as empty', () => {
 		expect(spellPath('ABCDEF', [0, 1, 5])).toBe('ABF');
 		expect(spellPath('AB', [0, 1, 47])).toBe('AB');
+	});
+});
+
+describe('problem', () => {
+	it('copies the cells so the caller cannot change them later', () => {
+		const cells = [1, 2];
+		const value = problem('adjacency', 'Zellen 1 und 2.', { kind: 'puzzle' }, cells);
+		cells.push(3);
+		expect(value.cells).toEqual([1, 2]);
 	});
 });
 

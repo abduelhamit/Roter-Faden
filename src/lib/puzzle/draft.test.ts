@@ -212,12 +212,12 @@ describe('checkDraft', () => {
 		});
 	});
 
-	it('reports a text length that differs from the path length with the path’s cells', () => {
+	it('reports only the cells past the text when the path is longer', () => {
 		const draft = withFaden('ROT', [42, 43, 44, 45]);
 		expectProblem(draft, {
 			rule: 'length-mismatch',
 			message: 'Roter Faden hat 3 Buchstaben, der Pfad aber 4 Zellen.',
-			cells: [42, 43, 44, 45],
+			cells: [45],
 			subject: faden
 		});
 	});
@@ -233,12 +233,12 @@ describe('checkDraft', () => {
 		expect(oneCell?.message).toBe('Roter Faden hat 3 Buchstaben, der Pfad aber 1 Zelle.');
 	});
 
-	it('reports a theme word’s length mismatch on that word', () => {
+	it('reports no cells when the text is longer than the path', () => {
 		const draft = setRowPath(addWord(withFaden('ROT', [42, 43, 44]), 'BESSER'), word(0), [0, 1, 2]);
 		expectProblem(draft, {
 			rule: 'length-mismatch',
 			message: 'Themenwort 1 hat 6 Buchstaben, der Pfad aber 3 Zellen.',
-			cells: [0, 1, 2],
+			cells: [],
 			subject: word(0)
 		});
 	});

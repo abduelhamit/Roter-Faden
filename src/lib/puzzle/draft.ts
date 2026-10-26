@@ -113,12 +113,14 @@ export function checkDraft(draft: Draft): DraftProblem[] {
 		if (row.path === null || row.path.length === 0) {
 			out.push(problem('missing-path', `${rowLabel(subject)} hat noch keinen Pfad.`, subject));
 		} else if (row.text.length !== row.path.length) {
+			// Only the cells that get no letter are at fault.
+			const cells = row.path.slice(row.text.length);
 			out.push(
 				problem(
 					'length-mismatch',
 					`${rowLabel(subject)} hat ${plural(row.text.length, 'Buchstabe', 'Buchstaben')}, der Pfad aber ${plural(row.path.length, 'Zelle', 'Zellen')}.`,
 					subject,
-					row.path
+					cells
 				)
 			);
 		}
