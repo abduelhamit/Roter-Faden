@@ -4,7 +4,7 @@ import { CELL_COUNT, normalizeText, rowLabel, type RowSubject, type Subject } fr
 export interface DraftRow {
 	/** Normalized A–Z. May be shorter or longer than the path. */
 	text: string;
-	/** Drawn cells in order, or null while the row is undrawn. */
+	/** Drawn cells in order, or null while the row is undrawn. An empty path also counts as undrawn. */
 	path: number[] | null;
 }
 
@@ -15,7 +15,7 @@ export interface Draft {
 	clue: string;
 	faden: DraftRow;
 	words: DraftRow[];
-	/** Milliseconds since the epoch; the store refreshes it on every save. */
+	/** Milliseconds since the epoch; every edit refreshes it. */
 	changedAt: number;
 }
 
@@ -31,22 +31,38 @@ export interface DraftIssue {
 	subject: Subject;
 }
 
+/** `randomUUID` needs a secure context, so a plain-http LAN origin falls back to random bytes. */
+const newId = (): string =>
+	typeof crypto.randomUUID === 'function'
+		? crypto.randomUUID()
+		: Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) =>
+				byte.toString(16).padStart(2, '0')
+			).join('');
+
 /** A new, empty draft with an id that stays put for the draft's whole life. */
 export const createDraft = (): Draft => ({
-	id: crypto.randomUUID(),
+	id: newId(),
 	clue: '',
 	faden: { text: '', path: null },
 	words: [],
 	changedAt: Date.now()
 });
 
+/** Every edit stamps the time, so a stored draft can be sorted by when it last changed. */
+const touch = (draft: Draft): Draft => ({ ...draft, changedAt: Date.now() });
+
 const rowOf = (draft: Draft, subject: RowSubject): DraftRow =>
 	subject.kind === 'faden' ? draft.faden : draft.words[subject.index];
 
 const withRow = (draft: Draft, subject: RowSubject, row: DraftRow): Draft =>
-	subject.kind === 'faden'
-		? { ...draft, faden: row }
-		: { ...draft, words: draft.words.map((word, index) => (index === subject.index ? row : word)) };
+	touch(
+		subject.kind === 'faden'
+			? { ...draft, faden: row }
+			: {
+					...draft,
+					words: draft.words.map((word, index) => (index === subject.index ? row : word))
+				}
+	);
 
 /** Folds a row's text while it is typed; the clue stays free text through `setClue`. */
 export const setRowText = (draft: Draft, subject: RowSubject, raw: string): Draft =>
@@ -58,16 +74,17 @@ export const setRowPath = (draft: Draft, subject: RowSubject, path: number[] | n
 /** A word that normalizes to nothing is not added. */
 export const addWord = (draft: Draft, raw: string): Draft => {
 	const text = normalizeText(raw);
-	return text === '' ? draft : { ...draft, words: [...draft.words, { text, path: null }] };
+	return text === '' ? draft : touch({ ...draft, words: [...draft.words, { text, path: null }] });
 };
 
 /** Removing a row removes its path too, so its cells and letters go back to the pool. */
-export const removeWord = (draft: Draft, index: number): Draft => ({
-	...draft,
-	words: draft.words.filter((_, i) => i !== index)
-});
+export const removeWord = (draft: Draft, index: number): Draft =>
+	touch({
+		...draft,
+		words: draft.words.filter((_, i) => i !== index)
+	});
 
-export const setClue = (draft: Draft, clue: string): Draft => ({ ...draft, clue });
+export const setClue = (draft: Draft, clue: string): Draft => touch({ ...draft, clue });
 
 /**
  * The 48 cells as one string, blank cells a space. Each path writes its row's text in
@@ -87,8 +104,9 @@ export function draftLetters(draft: Draft): string {
 
 /**
  * The editor-only checks, kept out of `validatePuzzle`: an empty clue, a row without a
- * path and a text length that differs from its path length. The first issue of a row is
- * its missing path, so a length mismatch is only reported once a path is drawn.
+ * path (null or empty) and a text length that differs from its path length. The first
+ * issue of a row is its missing path, so a length mismatch is only reported once a path
+ * is drawn.
  */
 export function checkDraft(draft: Draft): DraftIssue[] {
 	const out: DraftIssue[] = [];
@@ -106,7 +124,7 @@ export function checkDraft(draft: Draft): DraftIssue[] {
 	];
 	for (const subject of subjects) {
 		const row = rowOf(draft, subject);
-		if (row.path === null) {
+		if (!row.path || row.path.length === 0) {
 			out.push({
 				rule: 'missing-path',
 				message: `${rowLabel(subject)} hat noch keinen Pfad.`,

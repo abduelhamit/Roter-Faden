@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { testIsWord, validPuzzle } from './fixtures.js';
 import {
 	addWord,
@@ -36,6 +36,33 @@ describe('createDraft', () => {
 			[42, 43, 44]
 		);
 		expect(edited.id).toBe(draft.id);
+	});
+
+	it('still makes an id where randomUUID is missing', () => {
+		const randomUUID = crypto.randomUUID;
+		// @ts-expect-error -- a plain-http origin has no secure context
+		crypto.randomUUID = undefined;
+		try {
+			expect(createDraft().id).toMatch(/^[0-9a-f]{32}$/);
+		} finally {
+			crypto.randomUUID = randomUUID;
+		}
+	});
+
+	it('refreshes the time on every edit', () => {
+		vi.useFakeTimers();
+		try {
+			const created = createDraft();
+			const later = created.changedAt + 1000;
+			vi.setSystemTime(later);
+			expect(setClue(created, 'Zeit').changedAt).toBe(later);
+			expect(setRowText(created, faden, 'ROT').changedAt).toBe(later);
+			expect(setRowPath(created, faden, [0]).changedAt).toBe(later);
+			expect(addWord(created, 'BESSER').changedAt).toBe(later);
+			expect(removeWord(addWord(created, 'BESSER'), 0).changedAt).toBe(later);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
 
@@ -127,6 +154,32 @@ describe('checkDraft', () => {
 			message: 'Themenwort 1 hat noch keinen Pfad.',
 			cells: [],
 			subject: word(0)
+		});
+	});
+
+	it('treats an empty path as undrawn, like a missing one', () => {
+		const draft = setRowPath(setRowText(setClue(createDraft(), 'Zeit'), faden, 'ROT'), faden, []);
+		issue(draft, {
+			rule: 'missing-path',
+			message: 'Roter Faden hat noch keinen Pfad.',
+			cells: [],
+			subject: faden
+		});
+		expect(checkDraft(draft).map(({ rule }) => rule)).not.toContain('length-mismatch');
+	});
+
+	it('re-raises missing-path once a drawn path is cleared', () => {
+		let draft = setRowPath(
+			setRowText(setClue(createDraft(), 'Zeit'), faden, 'ROT'),
+			faden,
+			[42, 43, 44]
+		);
+		draft = setRowPath(draft, faden, null);
+		issue(draft, {
+			rule: 'missing-path',
+			message: 'Roter Faden hat noch keinen Pfad.',
+			cells: [],
+			subject: faden
 		});
 	});
 
