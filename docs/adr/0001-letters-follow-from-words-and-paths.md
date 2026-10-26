@@ -1,6 +1,6 @@
 # Letters follow from words and paths
 
-The editor could ask for the 48 letters first and then check that the words fit them, or take the words and their drawn paths as the source and derive the letters from those. We derive: every cell claimed by a path takes the next letter of the word or Roter Faden that owns it, so the grid can never disagree with the puzzle's answers and the editor needs no letter input at all. The cost is that the grid cannot be shaped independently of the words, and a row's text length has to equal its path length before its letters land.
+The editor could ask for the 48 letters first and then check that the words fit them, or take the words and their drawn paths as the source and derive the letters from those. We derive: every cell claimed by a path takes the next letter of the word or Roter Faden that owns it, so the grid can never disagree with the puzzle's answers and the editor needs no letter input at all. The cost is that the grid cannot be shaped independently of the words, and a row's text length has to equal its path length before its letters land in a finished puzzle.
 
 ## Considered Options
 
@@ -9,5 +9,6 @@ The editor could ask for the 48 letters first and then check that the words fit 
 
 ## Consequences
 
+- A draft row still lands the prefix letters its path covers while its text is shorter than the path, so the editor can show partial work; only validation requires the two lengths to match.
 - Reversing the decision means adding a letter input and a "the path spells the selected word" rule to the editor, plus a way to reconcile typed letters with already drawn paths.
 - The letters of a finished puzzle are never stored twice: the draft keeps only words, texts and paths, and the puzzle shape keeps only letters and paths.

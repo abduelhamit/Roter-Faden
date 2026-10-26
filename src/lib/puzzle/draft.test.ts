@@ -9,13 +9,18 @@ import {
 	setClue,
 	setRowPath,
 	setRowText,
-	type DraftIssue
+	type Draft,
+	type DraftProblem
 } from './draft.js';
 import type { RowSubject } from './model.js';
 import { validatePuzzle } from './validate.js';
 
 const faden: RowSubject = { kind: 'faden' };
 const word = (index: number): RowSubject => ({ kind: 'word', index });
+
+/** A draft with a clue and the faden's text and path; a null path leaves it undrawn. */
+const withFaden = (text: string, path: number[] | null): Draft =>
+	setRowPath(setRowText(setClue(createDraft(), 'Zeit'), faden, text), faden, path);
 
 describe('createDraft', () => {
 	it('starts empty with a stable id', () => {
@@ -122,6 +127,11 @@ describe('text entry', () => {
 		expect(draft.clue).toBe('Grüße aus Köln & Straße');
 	});
 
+	it('folds a theme word’s text set after it was added', () => {
+		const draft = setRowText(addWord(createDraft(), 'BESSER'), word(0), ' über groß ');
+		expect(draft.words[0].text).toBe('UEBERGROSS');
+	});
+
 	it('adds a row even when the word normalizes to nothing', () => {
 		expect(addWord(createDraft(), ' !!! ').words).toEqual([{ text: '', path: null }]);
 	});
@@ -140,7 +150,7 @@ describe('removeWord', () => {
 });
 
 describe('checkDraft', () => {
-	const issue = (draft: ReturnType<typeof createDraft>, expected: DraftIssue) =>
+	const expectProblem = (draft: Draft, expected: DraftProblem) =>
 		expect(checkDraft(draft)).toContainEqual(expected);
 
 	it('reports an empty clue and the undrawn faden on a new draft', () => {
@@ -162,7 +172,7 @@ describe('checkDraft', () => {
 
 	it('reports a listed theme word without a path on that word', () => {
 		const draft = addWord(setClue(createDraft(), 'Zeit'), 'BESSER');
-		issue(draft, {
+		expectProblem(draft, {
 			rule: 'missing-path',
 			message: 'Themenwort 1 hat noch keinen Pfad.',
 			cells: [],
@@ -171,8 +181,8 @@ describe('checkDraft', () => {
 	});
 
 	it('treats an empty path as undrawn, like a missing one', () => {
-		const draft = setRowPath(setClue(createDraft(), 'Zeit'), faden, []);
-		issue(draft, {
+		const draft = withFaden('', []);
+		expectProblem(draft, {
 			rule: 'missing-path',
 			message: 'Roter Faden hat noch keinen Pfad.',
 			cells: [],
@@ -181,9 +191,7 @@ describe('checkDraft', () => {
 	});
 
 	it('still reports a length mismatch against an empty path', () => {
-		let draft = setRowText(setClue(createDraft(), 'Zeit'), faden, 'ROT');
-		draft = setRowPath(draft, faden, []);
-		expect(checkDraft(draft)).toContainEqual({
+		expect(checkDraft(withFaden('ROT', []))).toContainEqual({
 			rule: 'length-mismatch',
 			message: 'Roter Faden hat 3 Buchstaben, der Pfad aber 0 Zellen.',
 			cells: [],
@@ -192,13 +200,8 @@ describe('checkDraft', () => {
 	});
 
 	it('re-raises missing-path once a drawn path is cleared', () => {
-		let draft = setRowPath(
-			setRowText(setClue(createDraft(), 'Zeit'), faden, 'ROT'),
-			faden,
-			[42, 43, 44]
-		);
-		draft = setRowPath(draft, faden, null);
-		issue(draft, {
+		const draft = setRowPath(withFaden('ROT', [42, 43, 44]), faden, null);
+		expectProblem(draft, {
 			rule: 'missing-path',
 			message: 'Roter Faden hat noch keinen Pfad.',
 			cells: [],
@@ -207,10 +210,8 @@ describe('checkDraft', () => {
 	});
 
 	it('reports a text length that differs from the path length with the path’s cells', () => {
-		let draft = setClue(createDraft(), 'Zeit');
-		draft = setRowText(draft, faden, 'ROT');
-		draft = setRowPath(draft, faden, [42, 43, 44, 45]);
-		issue(draft, {
+		const draft = withFaden('ROT', [42, 43, 44, 45]);
+		expectProblem(draft, {
 			rule: 'length-mismatch',
 			message: 'Roter Faden hat 3 Buchstaben, der Pfad aber 4 Zellen.',
 			cells: [42, 43, 44, 45],
@@ -218,10 +219,18 @@ describe('checkDraft', () => {
 		});
 	});
 
+	it('reports a theme word’s length mismatch on that word', () => {
+		const draft = setRowPath(addWord(withFaden('ROT', [42, 43, 44]), 'BESSER'), word(0), [0, 1, 2]);
+		expectProblem(draft, {
+			rule: 'length-mismatch',
+			message: 'Themenwort 1 hat 6 Buchstaben, der Pfad aber 3 Zellen.',
+			cells: [0, 1, 2],
+			subject: word(0)
+		});
+	});
+
 	it('is quiet once every row has a path that matches its text', () => {
-		let draft = setClue(createDraft(), 'Zeit');
-		draft = setRowText(draft, faden, 'ROT');
-		draft = setRowPath(draft, faden, [42, 43, 44]);
+		let draft = withFaden('ROT', [42, 43, 44]);
 		draft = addWord(draft, 'BESSER');
 		draft = setRowPath(draft, word(0), [0, 1, 2, 3, 4, 5]);
 		expect(checkDraft(draft)).toEqual([]);

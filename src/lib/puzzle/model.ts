@@ -28,8 +28,15 @@ export type Subject = RowSubject | { kind: 'puzzle' };
 export const rowLabel = (subject: RowSubject): string =>
 	subject.kind === 'faden' ? 'Roter Faden' : `Themenwort ${subject.index + 1}`;
 
-/** A problem the editor shows: a validation violation or a draft-only issue. */
-export interface Issue<R extends string> {
+/** Faden first, then every theme word, each paired with the subject that addresses it. */
+export const withSubjects = <T>(faden: T, words: T[]): Array<[T, RowSubject]> => [
+	[faden, { kind: 'faden' }],
+	...words.map((row, index): [T, RowSubject] => [row, { kind: 'word', index }])
+];
+
+/** Something the editor shows on a row or the whole puzzle: a rule violation or a
+ * draft-only problem. Not a GitHub issue. */
+export interface Problem<R extends string> {
 	rule: R;
 	/** German message for the editor. */
 	message: string;

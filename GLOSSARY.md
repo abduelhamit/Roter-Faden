@@ -56,10 +56,14 @@ _Avoid_: share link, game URL
 A puzzle being built in the editor, possibly incomplete and invalid. It becomes a valid puzzle only when it passes validation.
 _Avoid_: puzzle, template, project
 
+**Problem** (Problem):
+Something the editor shows on a row or on the whole puzzle: a rule violation from validation or a draft-only problem, with a German message and the cells to highlight.
+_Avoid_: issue (that means a GitHub issue here), error
+
 **Selection** (Auswahl):
 The trace in progress on the board, before it is submitted.
 _Avoid_: path, highlight
 
 **Row** (Zeile):
-One answer's strip in the word panel: the Roter Faden or one theme word, with its input, path and errors. A row subject names one such row; a violation that belongs to two rows or to neither has the puzzle as its subject.
+One answer's strip in the word panel: the Roter Faden or one theme word, with its input, path and problems. A row subject names one such row; a violation that belongs to two rows or to neither has the puzzle as its subject.
 _Avoid_: line, entry

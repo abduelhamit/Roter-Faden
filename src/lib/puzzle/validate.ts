@@ -7,7 +7,8 @@ import {
 	isCells,
 	rowLabel,
 	spellPath,
-	type Issue,
+	withSubjects,
+	type Problem,
 	type Puzzle,
 	type RowSubject,
 	type Subject
@@ -27,7 +28,7 @@ export type Rule =
 
 /** A puzzle-rule breach. Uniqueness violations list the word's own cells first, then the
  * group it collides with. */
-export type Violation = Issue<Rule>;
+export type Violation = Problem<Rule>;
 
 export type ValidationResult = { ok: true } | { ok: false; violations: Violation[] };
 
@@ -53,12 +54,6 @@ const mergeCells = (own: number[], other: number[]): number[] => [...new Set([..
 /** Row identity: two rows are the same when they are the same word index or both the faden. */
 const sameRow = (a: RowSubject, b: RowSubject): boolean =>
 	a.kind === 'word' && b.kind === 'word' ? a.index === b.index : a.kind === b.kind;
-
-/** Every path paired with the row it belongs to, faden first. */
-const paths = (puzzle: Puzzle): Array<[number[], RowSubject]> => [
-	[puzzle.faden, FADEN_SUBJECT],
-	...puzzle.words.map((path, index): [number[], RowSubject] => [path, wordSubject(index)])
-];
 
 /** A theme word as spelled by its path. */
 export interface SpelledWord {
@@ -164,7 +159,7 @@ export function checkStructure(puzzle: Puzzle): Violation[] {
 /** Every path is 8-adjacent and never reuses a cell. */
 export function checkAdjacency(puzzle: Puzzle): Violation[] {
 	const out: Violation[] = [];
-	for (const [path, subject] of paths(puzzle)) {
+	for (const [path, subject] of withSubjects(puzzle.faden, puzzle.words)) {
 		const seen = new Set<number>();
 		for (let i = 0; i < path.length; i++) {
 			if (i > 0 && !isAdjacent(path[i - 1], path[i])) {
@@ -196,7 +191,7 @@ export function checkAdjacency(puzzle: Puzzle): Violation[] {
 /** No crossings — two diagonals of a 2×2 block are both walked, within or between paths. */
 export function checkCrossings(puzzle: Puzzle): Violation[] {
 	const owner = new Map<number, RowSubject>();
-	for (const [path, subject] of paths(puzzle)) {
+	for (const [path, subject] of withSubjects(puzzle.faden, puzzle.words)) {
 		for (let i = 1; i < path.length; i++) {
 			const key = Math.min(path[i - 1], path[i]) * 64 + Math.max(path[i - 1], path[i]);
 			if (!owner.has(key)) owner.set(key, subject);
@@ -233,7 +228,7 @@ export function checkCrossings(puzzle: Puzzle): Violation[] {
 export function checkCoverage(puzzle: Puzzle): Violation[] {
 	const out: Violation[] = [];
 	const owner = new Array<number>(CELL_COUNT).fill(-1);
-	paths(puzzle).forEach(([path], id) => {
+	withSubjects(puzzle.faden, puzzle.words).forEach(([path], id) => {
 		for (const cell of path) {
 			if (owner[cell] !== -1 && owner[cell] !== id) {
 				// Two rows claim the cell, so it belongs to neither alone.

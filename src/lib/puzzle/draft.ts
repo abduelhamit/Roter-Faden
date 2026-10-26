@@ -1,4 +1,11 @@
-import { CELL_COUNT, normalizeText, rowLabel, type Issue, type RowSubject } from './model.js';
+import {
+	CELL_COUNT,
+	normalizeText,
+	rowLabel,
+	withSubjects,
+	type Problem,
+	type RowSubject
+} from './model.js';
 
 /** One answer's row in the editor: its text and the path drawn for it, if any. */
 export interface DraftRow {
@@ -22,7 +29,7 @@ export interface Draft {
 /** Every editor-only check. None of these are puzzle rules. */
 export type DraftRule = 'empty-clue' | 'missing-path' | 'length-mismatch';
 
-export type DraftIssue = Issue<DraftRule>;
+export type DraftProblem = Problem<DraftRule>;
 
 /** A new, empty draft with an id that stays put for the draft's whole life. */
 export const createDraft = (): Draft => ({
@@ -36,25 +43,22 @@ export const createDraft = (): Draft => ({
 /** Every edit stamps the time, so a stored draft can be sorted by when it last changed. */
 const touch = (draft: Draft): Draft => ({ ...draft, changedAt: Date.now() });
 
-const rowOf = (draft: Draft, subject: RowSubject): DraftRow =>
-	subject.kind === 'faden' ? draft.faden : draft.words[subject.index];
-
-const withRow = (draft: Draft, subject: RowSubject, row: DraftRow): Draft =>
+const updateRow = (draft: Draft, subject: RowSubject, update: (row: DraftRow) => DraftRow): Draft =>
 	touch(
 		subject.kind === 'faden'
-			? { ...draft, faden: row }
+			? { ...draft, faden: update(draft.faden) }
 			: {
 					...draft,
-					words: draft.words.map((word, index) => (index === subject.index ? row : word))
+					words: draft.words.map((word, index) => (index === subject.index ? update(word) : word))
 				}
 	);
 
 /** Folds a row's text while it is typed; the clue stays free text through `setClue`. */
 export const setRowText = (draft: Draft, subject: RowSubject, raw: string): Draft =>
-	withRow(draft, subject, { ...rowOf(draft, subject), text: normalizeText(raw) });
+	updateRow(draft, subject, (row) => ({ ...row, text: normalizeText(raw) }));
 
 export const setRowPath = (draft: Draft, subject: RowSubject, path: number[] | null): Draft =>
-	withRow(draft, subject, { ...rowOf(draft, subject), path });
+	updateRow(draft, subject, (row) => ({ ...row, path }));
 
 /** A word that normalizes to nothing is kept as an empty row. */
 export const addWord = (draft: Draft, raw: string): Draft =>
@@ -69,20 +73,15 @@ export const removeWord = (draft: Draft, index: number): Draft =>
 
 export const setClue = (draft: Draft, clue: string): Draft => touch({ ...draft, clue });
 
-/** The draft's rows paired with the subject that addresses them, faden first. */
-const rows = (draft: Draft): Array<[DraftRow, RowSubject]> => [
-	[draft.faden, { kind: 'faden' }],
-	...draft.words.map((row, index): [DraftRow, RowSubject] => [row, { kind: 'word', index }])
-];
-
 /**
  * The 48 cells as one string, blank cells a space. Each path writes its row's text in
- * path order; the first letter written to a cell keeps it. A cell past the end of its
- * row's text leaves the cell free for another row.
+ * path order; rows go faden first, then the theme words in order, and the first letter
+ * written to a cell keeps it — so the faden wins a shared cell. A cell past the end of
+ * its row's text stays free for another row.
  */
 export function draftLetters(draft: Draft): string {
 	const letters = new Array<string>(CELL_COUNT).fill(' ');
-	for (const [row] of rows(draft)) {
+	for (const [row] of withSubjects(draft.faden, draft.words)) {
 		row.path?.forEach((cell, index) => {
 			// The draft is lenient, so an index outside the grid must not stretch the string.
 			if (cell < 0 || cell >= CELL_COUNT) return;
@@ -98,8 +97,8 @@ export function draftLetters(draft: Draft): string {
  * path (null or empty) and a text length that differs from its path length. A length
  * mismatch is reported for any path array, so an empty path with text reports both.
  */
-export function checkDraft(draft: Draft): DraftIssue[] {
-	const out: DraftIssue[] = [];
+export function checkDraft(draft: Draft): DraftProblem[] {
+	const out: DraftProblem[] = [];
 	if (draft.clue.trim() === '') {
 		out.push({
 			rule: 'empty-clue',
@@ -108,7 +107,7 @@ export function checkDraft(draft: Draft): DraftIssue[] {
 			subject: { kind: 'puzzle' }
 		});
 	}
-	for (const [row, subject] of rows(draft)) {
+	for (const [row, subject] of withSubjects(draft.faden, draft.words)) {
 		const path = row.path;
 		if (!path || path.length === 0) {
 			out.push({
