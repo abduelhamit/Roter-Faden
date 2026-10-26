@@ -27,6 +27,7 @@ German word-search puzzle on a 6 columns × 8 rows grid of 48 letters.
 - `adapter-static` with `prerender = true` in `src/routes/+layout.ts`. No server code, no `+page.server.ts`, no runtime API.
 - Base path is `/Roter-Faden`. Build internal links with `resolve()` from `$app/paths` and reference assets through imports or `base`. Never hardcode `/`. In Playwright tests, `page.goto` needs the `/Roter-Faden/...` prefix.
 - GitHub Pages runs Jekyll, which ignores `_app/`. `static/.nojekyll` prevents that; keep it. Deploy runs via `.github/workflows/deploy.yml` on push to `main` (checks + build also run on pull requests, deploy is skipped there). Pages source in the repo settings must stay "GitHub Actions".
+- HTTPS only: GitHub Pages serves the site over HTTPS and decoding needs `crypto`, so the browser always has a secure context. Code and review findings assume it; plain-http fallbacks are dead code.
 - Shared puzzles live entirely in the URL **hash** (`#...`). The hash only exists in the browser, so prerendering can't see it: decode it client-side (`onMount`/`$effect`/`hashchange`).
 
 ## Game rules agents tend to get wrong
