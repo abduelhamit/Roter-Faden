@@ -56,7 +56,7 @@ export const setRowText = (draft: Draft, subject: RowSubject, raw: string): Draf
 export const setRowPath = (draft: Draft, subject: RowSubject, path: number[] | null): Draft =>
 	withRow(draft, subject, { ...rowOf(draft, subject), path });
 
-/** A word that normalizes to nothing is still a row, so the editor can report its missing text. */
+/** A word that normalizes to nothing is kept as an empty row. */
 export const addWord = (draft: Draft, raw: string): Draft =>
 	touch({ ...draft, words: [...draft.words, { text: normalizeText(raw), path: null }] });
 
@@ -77,18 +77,16 @@ const rows = (draft: Draft): Array<[DraftRow, RowSubject]> => [
 
 /**
  * The 48 cells as one string, blank cells a space. Each path writes its row's text in
- * path order; a cell past the end of its row's text stays blank. A cell claimed twice
- * keeps its first claim, which may be blank.
+ * path order; the first letter written to a cell keeps it. A cell past the end of its
+ * row's text leaves the cell free for another row.
  */
 export function draftLetters(draft: Draft): string {
 	const letters = new Array<string>(CELL_COUNT).fill(' ');
-	const claimed = new Set<number>();
 	for (const [row] of rows(draft)) {
 		row.path?.forEach((cell, index) => {
 			// The draft is lenient, so an index outside the grid must not stretch the string.
 			if (cell < 0 || cell >= CELL_COUNT) return;
-			if (claimed.has(cell)) return;
-			claimed.add(cell);
+			if (letters[cell] !== ' ') return;
 			if (row.text[index] !== undefined) letters[cell] = row.text[index];
 		});
 	}
@@ -111,7 +109,8 @@ export function checkDraft(draft: Draft): DraftIssue[] {
 		});
 	}
 	for (const [row, subject] of rows(draft)) {
-		if (!row.path || row.path.length === 0) {
+		const path = row.path;
+		if (!path || path.length === 0) {
 			out.push({
 				rule: 'missing-path',
 				message: `${rowLabel(subject)} hat noch keinen Pfad.`,
@@ -119,11 +118,11 @@ export function checkDraft(draft: Draft): DraftIssue[] {
 				subject
 			});
 		}
-		if (row.path && row.text.length !== row.path.length) {
+		if (path && row.text.length !== path.length) {
 			out.push({
 				rule: 'length-mismatch',
-				message: `${rowLabel(subject)} hat ${row.text.length} Buchstaben, der Pfad aber ${row.path.length} Zellen.`,
-				cells: row.path,
+				message: `${rowLabel(subject)} hat ${row.text.length} Buchstaben, der Pfad aber ${path.length} Zellen.`,
+				cells: path,
 				subject
 			});
 		}

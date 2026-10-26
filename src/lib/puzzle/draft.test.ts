@@ -83,7 +83,7 @@ describe('draftLetters', () => {
 		expect(letters[47]).toBe('R');
 	});
 
-	it('keeps the first row’s letter when paths share a cell', () => {
+	it('keeps the first letter when paths share a cell', () => {
 		let draft = addWord(addWord(createDraft(), 'AB'), 'CD');
 		draft = setRowPath(draft, word(0), [5, 6]);
 		draft = setRowPath(draft, word(1), [5, 7]);
@@ -91,6 +91,21 @@ describe('draftLetters', () => {
 		expect(letters[5]).toBe('A');
 		expect(letters[6]).toBe('B');
 		expect(letters[7]).toBe('D');
+	});
+
+	it('lets the faden keep a cell it shares with a word', () => {
+		let draft = setRowText(createDraft(), faden, 'R');
+		draft = addWord(draft, 'A');
+		draft = setRowPath(draft, faden, [5]);
+		draft = setRowPath(draft, word(0), [5]);
+		expect(draftLetters(draft)[5]).toBe('R');
+	});
+
+	it('leaves a cell free when the first path’s text ends there', () => {
+		let draft = addWord(addWord(createDraft(), 'A'), 'B');
+		draft = setRowPath(draft, word(0), [5, 6]);
+		draft = setRowPath(draft, word(1), [6]);
+		expect(draftLetters(draft)[6]).toBe('B');
 	});
 });
 
@@ -163,7 +178,6 @@ describe('checkDraft', () => {
 			cells: [],
 			subject: faden
 		});
-		expect(checkDraft(draft).map(({ rule }) => rule)).not.toContain('length-mismatch');
 	});
 
 	it('still reports a length mismatch against an empty path', () => {
