@@ -31,17 +31,9 @@ export interface DraftIssue {
 	subject: Subject;
 }
 
-/** `randomUUID` needs a secure context, so a plain-http LAN origin falls back to random bytes. */
-const newId = (): string =>
-	typeof crypto.randomUUID === 'function'
-		? crypto.randomUUID()
-		: Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) =>
-				byte.toString(16).padStart(2, '0')
-			).join('');
-
 /** A new, empty draft with an id that stays put for the draft's whole life. */
 export const createDraft = (): Draft => ({
-	id: newId(),
+	id: crypto.randomUUID(),
 	clue: '',
 	faden: { text: '', path: null },
 	words: [],

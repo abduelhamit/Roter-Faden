@@ -38,17 +38,6 @@ describe('createDraft', () => {
 		expect(edited.id).toBe(draft.id);
 	});
 
-	it('still makes an id where randomUUID is missing', () => {
-		const randomUUID = crypto.randomUUID;
-		// @ts-expect-error -- a plain-http origin has no secure context
-		crypto.randomUUID = undefined;
-		try {
-			expect(createDraft().id).toMatch(/^[0-9a-f]{32}$/);
-		} finally {
-			crypto.randomUUID = randomUUID;
-		}
-	});
-
 	it('refreshes the time on every edit', () => {
 		vi.useFakeTimers();
 		try {
